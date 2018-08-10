@@ -1,0 +1,4 @@
+node_modules
+/*.sql
+local
+.DS_Store
