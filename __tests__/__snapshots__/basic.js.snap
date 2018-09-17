@@ -1,0 +1,123 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should match a definition with optionals 1`] = `
+Object {
+  "areas": Object {
+    "optional_found": Array [],
+    "value": Object {
+      "mismatches": Array [],
+      "value": Array [
+        Object {
+          "key": Object {
+            "property": "id",
+          },
+          "value": Object {
+            "type_description": "hey",
+          },
+        },
+      ],
+    },
+    "var": "result",
+  },
+  "mismatches": Array [],
+}
+`;
+
+exports[`should match a definition with provided optionals 1`] = `
+Object {
+  "areas": Object {
+    "optional_found": Array [
+      "result.name = 'Cool';",
+    ],
+    "value": Object {
+      "mismatches": Array [],
+      "value": Array [
+        Object {
+          "key": "id",
+          "value": "hey",
+        },
+      ],
+    },
+    "var": "result",
+  },
+  "mismatches": Array [],
+}
+`;
+
+exports[`should match a simple sequelize definition 1`] = `
+Object {
+  "areas": Object {
+    "model": "Price",
+    "model_definition": Object {
+      "mismatches": Array [],
+      "value": Array [
+        Object {
+          "key": "id",
+          "value": Object {
+            "allowNull": false,
+            "autoIncrement": false,
+            "defaultValue": "UUIDV4",
+            "primaryKey": true,
+            "type": "UUID",
+          },
+        },
+        Object {
+          "key": "shape",
+          "value": "STRING",
+        },
+        Object {
+          "key": "color",
+          "value": "STRING",
+        },
+        Object {
+          "key": "clarity",
+          "value": "STRING",
+        },
+        Object {
+          "key": "lowSize",
+          "value": "DECIMAL",
+        },
+        Object {
+          "key": "highSize",
+          "value": "DECIMAL",
+        },
+        Object {
+          "key": "caratPrice",
+          "value": "DECIMAL",
+        },
+        Object {
+          "key": "date",
+          "value": "STRING",
+        },
+      ],
+    },
+    "model_name": "Price",
+  },
+  "mismatches": Array [],
+}
+`;
+
+exports[`should match a single key: value entry 1`] = `
+Object {
+  "areas": Object {
+    "key": "id",
+    "type_description": "hey",
+    "var": "result",
+  },
+  "mismatches": Array [],
+}
+`;
+
+exports[`should match multiple expression 1`] = `
+Object {
+  "areas": Object {
+    "expressions": Array [
+      "let x = 10;",
+      "let y = Math.random();",
+      "let z = x * y;",
+    ],
+    "var": "z",
+  },
+  "mismatches": Array [],
+}
+`;

@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should match a stock 1`] = `
+Object {
+  "areas": Object {
+    "fetch_fn": "sunriseDiamonds",
+    "fetch_functions": Array [
+      "let response = await fetch('http://www.sunrisediamonds.com.hk/inventory/Wgc.json');",
+      "let diamonds = await response.json();",
+    ],
+    "flow_functions": Array [
+      "iterate.filter(x => x.Lab === 'GIA')",
+      "iterate.map(diamond => {
+  let cert_number = diamond['Certi No.'];
+  let image_url = (diamond['Other IMG'] || '').includes('viewimg') ? \`https://www.sunrisediamonds.com.hk/img/\${cert_number}/PR.jpg\` : diamond['Other IMG'];
+  return {
+    certificate_number: diamond['Certi No.'],
+    carats: Number(diamond.Cts),
+    supplier_name: 'sunrisediamonds',
+    // TODO Check this
+    supplier_stockId: diamond['Ref. No'],
+    price: Number(diamond['Net Amt($)']),
+    discount: Number(diamond['Disc(%)']),
+    image: image_url,
+    v360: diamond['Other Video']
+  };
+})",
+    ],
+    "import_functions": Array [
+      "let iterate = require('./utils/iterate');",
+      "let {
+  flow
+} = require('lodash');",
+    ],
+    "rows_variable": "diamonds",
+  },
+  "mismatches": Array [],
+}
+`;
