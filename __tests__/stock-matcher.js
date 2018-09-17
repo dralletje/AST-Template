@@ -13,7 +13,7 @@ it('should match a stock', () => {
     let iterate = require('./utils/iterate');
     let { flow } = require('lodash');
 
-    async function sunriseDiamonds(job) {
+    let fetch_stock = async (job) => {
       let response = await fetch(
         'http://www.sunrisediamonds.com.hk/inventory/Wgc.json'
       );
@@ -45,13 +45,13 @@ it('should match a stock', () => {
       ])(diamonds)
     }
 
-    module.exports = sunriseDiamonds;
+    module.exports = { fetch_stock };
   `;
 
   let definition_template = template.statements`
     ${template.many('import_functions', template.Statement)}
 
-    async function ${template.Identifier('fetch_fn')}(job) {
+    let ${template.Identifier('fetch_fn')} = async (${template.optional('arg', template.Identifier)}) => {
       ${template.many('fetch_functions', template.Statement)}
 
       return flow([
@@ -59,7 +59,7 @@ it('should match a stock', () => {
       ])(${template.Identifier('rows_variable')})
     }
 
-    module.exports = ${template.Identifier('fetch_fn')};
+    module.exports = ${template.Expression('export')};
   `;
 
   expect(definition_template.match(simple_definition)).toMatchSnapshot();

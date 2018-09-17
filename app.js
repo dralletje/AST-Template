@@ -2,6 +2,7 @@ let generate_unsafe = require('babel-generator').default;
 let { parse, parseExpression } = require('@babel/parser');
 let { namedTypes: t } = require('ast-types');
 let { zip, isEqual, omit, isObject, range } = require('lodash');
+let chalk = require('chalk');
 
 let generate = (ast) => {
   try {
@@ -14,6 +15,15 @@ let generate = (ast) => {
   }
 };
 
+let babeloptions = {
+  allowAwaitOutsideFunction: true,
+  allowImportExportEverywhere: true,
+  allowReturnOutsideFunction: true,
+  allowSuperOutsideMethod: true,
+
+  plugins: ['asyncGenerators'],
+};
+
 let remove_keys = (object) => {
   let unnecessary_keys = [
     'start',
@@ -24,6 +34,10 @@ let remove_keys = (object) => {
     'leadingComments',
   ];
   return omit(object, unnecessary_keys);
+};
+
+let show_mismatch = (expected, received, vs = 'vs') => {
+  return `${chalk.red(`'${received}'`)} ${vs} ${chalk.green(`'${expected}'`)}`;
 };
 
 let container_nodes = {
@@ -60,11 +74,10 @@ let is_primitive = (x) => !isObject(x);
 
 let match_subtemplate = ({ template: _template, node }) => {
   if (typeof _template === 'function') {
-    let x = (template.expression`${_template('basic')}`).match(node);
+    let x = template.expression`${_template('basic')}`.match(node);
     return {
-      mismatches: [],
       areas: x.areas.basic,
-    }
+    };
   } else {
     if (typeof _template.match === 'function') {
       return _template.match(node);
@@ -73,34 +86,28 @@ let match_subtemplate = ({ template: _template, node }) => {
         ..._template,
         name: 'basic',
       };
-      let x = (template.expression`${t}`).match(node);
+      let x = template.expression`${t}`.match(node);
       return {
-        mismatches: [],
         areas: x.areas.basic,
-      }
+      };
     }
   }
-}
+};
 
 let compare_node = (
   _node_template,
   _node_filled_in,
   placeholders,
-  path = []
 ) => {
   // First case is easy, this is to compare primitives.
   // If they match, nice
   // If they don't, we have a mismatch
   if (!isObject(_node_template) || !isObject(_node_filled_in)) {
     if (_node_template === _node_filled_in) {
-      return { areas: {}, mismatches: [] };
+      return { areas: {} };
     } else {
-      console.log(`_node_template:`, _node_template);
-      console.log(`_node_filled_in:`, _node_filled_in);
-      return {
-        areas: {},
-        mismatches: [{ message: 'Not equal' }],
-      };
+      let mismatch = show_mismatch(_node_template, _node_filled_in);
+      throw new Error(`Primitives not equal (${mismatch})`);
     }
   }
 
@@ -109,11 +116,7 @@ let compare_node = (
   let node_template = remove_keys(_node_template);
   let node_filled_in = remove_keys(_node_filled_in);
 
-  // console.log(`node_template:`, node_template)
-  // console.log(`node_filled_in:`, node_filled_in)
-
   // If the node we look at is a placeholder, we need to store the value we are currently at
-  //
   if (is_placeholder(node_template)) {
     let {
       // map_fn allows for extra checks and simplification
@@ -127,13 +130,9 @@ let compare_node = (
       throw new Error(`Repeat used in a non-array place`);
     }
 
-    // TODO `map_fn` should be able to return mismatches as well,
-    // .... and those should be added to the `mismatches` property returned
-
     if (!type.check(node_filled_in)) {
-      throw new Error(
-        `Type '${type}' does not match '${generate(node_filled_in)}'`
-      );
+      let mismatch = show_mismatch(type, node_filled_in.type);
+      throw new Error(`Types not matching (${mismatch})`);
     }
 
     let result = map_fn(node_filled_in, (template_sub, filled_sub) => {
@@ -146,31 +145,24 @@ let compare_node = (
       areas: {
         [name]: result,
       },
-      mismatches: [],
     };
   }
 
   // Now for the deeper equality check, we check if the keys match up.
   // If they don't, no reason to look further: Those are different
   if (!isEqual(Object.keys(node_template), Object.keys(node_filled_in))) {
-    return {
-      areas: {},
-      mismatches: [
-        {
-          message: 'Different keys!',
-          path,
-          keys_template: Object.keys(node_template),
-          keys_filled_in: Object.keys(node_filled_in),
-        },
-      ],
-    };
+    let mismatch = show_mismatch(
+      Object.keys(node_template),
+      Object.keys(node_filled_in)
+    );
+    throw new Error(`Different keys (${mismatch})`);
   }
 
   if (node_template.type == null) {
     if (isEqual(node_template, node_filled_in)) {
-      return { areas: {}, mismatches: [] };
+      return { areas: {} };
     } else {
-      console.log(`node_template:`, node_template)
+      console.log(`node_template:`, node_template);
       throw new Error(`'node_template' has type null?`);
     }
   }
@@ -185,7 +177,6 @@ let compare_node = (
   }
 
   let areas = {};
-  let mismatches = [];
 
   // For every key, we are going to check if it is equal
   // This is where stuff gets tricky, because if we encounter an array in here,
@@ -193,6 +184,11 @@ let compare_node = (
   // But you will see that later in this block
   for (let [key, template_value] of Object.entries(node_template)) {
     let filled_in_value = node_filled_in[key];
+
+    // `extra` key actually always gives me trouble
+    if (key === 'extra') {
+      continue;
+    }
 
     // THIS, is where the real magic begins (at least, for now)
     // If it is an array, I need to check if this array contains any placeholder identifiers.
@@ -217,7 +213,7 @@ let compare_node = (
       // I'm just doing this as a shortcut for my brain, in the final result this should work automatically
       if (repeat_placeholders.length === 0) {
         if (template_value.length !== filled_in_value.length) {
-          throw new Error(`Not same array lengths, and no repeats inside`)
+          throw new Error(`Not same array lengths, and no repeats inside`);
         }
       }
 
@@ -249,17 +245,15 @@ let compare_node = (
           let results = [];
 
           if (repeat_length > repeat.max) {
+            let mismatch = show_mismatch(repeat.min, repeat_length, '>');
             throw new Error(
-              `Repeat is required more often than max (${repeat_length} > ${
-                repeat.max
-              })`
+              `Repeat matches more nodes than allowed (${mismatch})`
             );
           }
           if (repeat_length < repeat.min) {
+            let mismatch = show_mismatch(repeat.max, repeat_length, '<');
             throw new Error(
-              `Repeat is required less often than min (${repeat_length} > ${
-                repeat.max
-              })`
+              `Repeat matches less nodes than required (${mismatch})`
             );
           }
 
@@ -268,7 +262,7 @@ let compare_node = (
               template: repeat.subtemplate,
               node: filled_in_value[i],
             });
-            // TODO Check for mismatch!
+
             results.push(result.areas);
           }
           areas = {
@@ -279,66 +273,48 @@ let compare_node = (
         } else {
           // Just compare the two values in the array on these indexes
           try {
-            let result = compare_node(temp_sub, fill_sub, placeholders, [
-              ...path,
-              {
-                key: `${key}.${index}`,
-                template_value: generate(temp_sub),
-                filled_in_value: generate(fill_sub),
-              },
-            ]);
+            let result = compare_node(temp_sub, fill_sub, placeholders);
 
             // Warn by multiple areas
             areas = {
               ...areas,
               ...result.areas,
             };
-            mismatches = [...mismatches, ...result.mismatches];
           } catch (err) {
-            err.message = `${path}${key}.${index}: ${err.message}`
+            err.message = `.${key}.${index}${err.message}`;
             throw err;
           }
         }
       }
     } else {
-      if (key === 'extra') {
-        continue;
-      }
-
       // If the value is not an array, that means it is a "normal" object or primitive.
       // in which case, we can compare them with `compare_node`, which is great.
-      let sub_path = [
-        ...path,
-        {
-          key,
-          template_value: generate(template_value),
-          filled_in_value: generate(filled_in_value),
-        },
-      ];
+      try {
+        let result = compare_node(
+          template_value,
+          filled_in_value,
+          placeholders
+        );
 
-      let result = compare_node(
-        template_value,
-        filled_in_value,
-        placeholders,
-        sub_path
-      );
-      // TODO Warn if there are multiple areas in result?
-      areas = {
-        ...areas,
-        ...result.areas,
-      };
-      mismatches = [...mismatches, ...result.mismatches];
+        // TODO Warn if there are multiple areas in result?
+        areas = {
+          ...areas,
+          ...result.areas,
+        };
+      } catch (err) {
+        err.message = `.${key}${err.message}`;
+        throw err;
+      }
     }
   }
 
   return {
     areas: areas,
-    mismatches: mismatches,
   };
 };
 
 let match_ast = (template_ast, filled_ast, placeholders) => {
-  let { mismatches, areas } = compare_node(
+  let { areas } = compare_node(
     template_ast.program || template_ast,
     filled_ast.program || filled_ast,
     placeholders
@@ -352,7 +328,6 @@ let match_ast = (template_ast, filled_ast, placeholders) => {
   }
 
   return {
-    mismatches,
     areas,
   };
 };
@@ -379,13 +354,13 @@ let generate_placeholders = (text, nodes) => {
 
 let expression = (text, ...nodes) => {
   let { placeholders, source } = generate_placeholders(text, nodes);
-  let template_ast = parseExpression(source);
+  let template_ast = parseExpression(source, babeloptions);
 
   return {
     match: (compare_source) => {
       let ast_filled_in =
         typeof compare_source === 'string'
-          ? parseExpression(compare_source)
+          ? parseExpression(compare_source, babeloptions)
           : compare_source;
       return match_ast(template_ast, ast_filled_in, placeholders);
     },
@@ -395,11 +370,11 @@ let expression = (text, ...nodes) => {
 
 let statements = (text, ...nodes) => {
   let { placeholders, source } = generate_placeholders(text, nodes);
-  let template_ast = parse(source);
+  let template_ast = parse(source, babeloptions);
 
   return {
     match: (compare_source) => {
-      let ast_filled_in = parse(compare_source);
+      let ast_filled_in = parse(compare_source, babeloptions);
       return match_ast(template_ast, ast_filled_in, placeholders);
     },
     ast: template_ast,
@@ -441,18 +416,18 @@ let template = {
     };
   },
 
-  Expression: (name, { scope } = { scope: null }) => {
+  Expression: (name) => {
     return {
       type: t.Expression,
       name,
-      map_fn: scope != null ? (x) => minivaluate(x, scope) : (x) => generate(x),
+      map_fn: x => generate(x),
     };
   },
-  Statement: (name, { scope } = { scope: null }) => {
+  Statement: (name) => {
     return {
       type: t.Statement,
       name,
-      map_fn: x => generate(x),
+      map_fn: (x) => generate(x),
     };
   },
   Identifier: (name) => {
@@ -472,11 +447,10 @@ let template = {
       name,
       map_fn: (object) => {
         return {
-          mismatches: [],
-          value: object.properties.map((property) => {
+          entries: object.properties.map((property) => {
             let key_match = match_subtemplate({
               template: property_rules.key,
-              node: property.key
+              node: property.key,
             });
             let value_match = match_subtemplate({
               template: property_rules.value,
@@ -493,67 +467,4 @@ let template = {
   },
 };
 
-let minivaluate = (expression, scope) => {
-  if (expression.type === 'Identifier') {
-    // Variable!!
-    let val = scope[expression.name];
-    if (val == null) {
-      throw new Error(`Not found '${val}'`);
-    }
-    return val;
-  }
-  if (expression.type === 'MemberExpression') {
-    let object = minivaluate(expression.object, scope);
-    let property = expression.property.name;
-    return object[property];
-  }
-
-  if (expression.type === 'ObjectExpression') {
-    let obj = {};
-
-    for (let property of expression.properties) {
-      // precondition(property.key.type === 'Identifier');
-      // precondition(property.computed === false)
-      obj[property.key.name] = minivaluate(property.value, scope);
-    }
-    return obj;
-  }
-
-  if (expression.type === 'StringLiteral') {
-    return expression.value;
-  }
-  if (expression.type === 'NumericLiteral') {
-    return expression.value;
-  }
-  if (expression.type === 'BooleanLiteral') {
-    return expression.value;
-  }
-
-  let numberic_operators = ['+', '-', '*', '/'];
-  if (expression.type === 'BinaryExpression') {
-    let right = minivaluate(expression.right, scope);
-    let left = minivaluate(expression.left, scope);
-
-    if (typeof right !== typeof left) {
-      throw new Error(
-        `Trying to operate on '${typeof right}' and '${typeof left}' in '${generate()}'`
-      );
-    }
-    let type = typeof right;
-
-    if (expression.operator === '+') {
-      if (type === 'string') {
-        return left + right;
-      }
-      if (type === 'number') {
-        return left + right;
-      }
-    }
-  }
-
-  throw new Error(
-    `Couldn't parse '${generate(expression)}' (${expression.type})`
-  );
-};
-
-module.exports = { minivaluate, template };
+module.exports = { template };

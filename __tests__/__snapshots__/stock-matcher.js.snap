@@ -3,7 +3,13 @@
 exports[`should match a stock 1`] = `
 Object {
   "areas": Object {
-    "fetch_fn": "sunriseDiamonds",
+    "arg": Array [
+      "job",
+    ],
+    "export": "{
+  fetch_stock
+}",
+    "fetch_fn": "fetch_stock",
     "fetch_functions": Array [
       "let response = await fetch('http://www.sunrisediamonds.com.hk/inventory/Wgc.json');",
       "let diamonds = await response.json();",
@@ -34,6 +40,5 @@ Object {
     ],
     "rows_variable": "diamonds",
   },
-  "mismatches": Array [],
 }
 `;

@@ -1,4 +1,5 @@
-let { template, minivaluate } = require('../app.js');
+let { template } = require('../app.js');
+let { minivaluate } = require('../minivaluate.js');
 
 it('should minivaluate some expression', () => {
   expect(minivaluate(template.expression`'Hey'`.ast)).toEqual('Hey');
@@ -7,7 +8,7 @@ it('should minivaluate some expression', () => {
   expect(minivaluate(template.expression`{ id: 10 }`.ast)).toEqual({ id: 10 });
 });
 
-it('should match a simple sequelize definition', () => {
+it('should minivaluate expression that uses scope', () => {
   let scope = {
     DataTypes: {
       UUID: 'UUID',
@@ -16,6 +17,40 @@ it('should match a simple sequelize definition', () => {
       DECIMAL: 'DECIMAL',
     },
   };
+  expect(minivaluate(template.expression`DataTypes.UUID`, scope)).toEqual('UUID');
+  expect(minivaluate(template.expression`DataTypes.UUIDV4`, scope)).toEqual('UUIDV4');
+  expect(minivaluate(template.expression`DataTypes.STRING`, scope)).toEqual('STRING');
+  expect(minivaluate(template.expression`DataTypes.DECIMAL`, scope)).toEqual('DECIMAL');
+});
+
+it('should minivaluate an object expression', () => {
+  let scope = {
+    DataTypes: {
+      UUID: 'UUID',
+      UUIDV4: 'UUIDV4',
+      STRING: 'STRING',
+      DECIMAL: 'DECIMAL',
+    },
+  };
+
+  let object = template.expression`{
+    type: DataTypes.UUID,
+    primaryKey: true,
+    defaultValue: DataTypes.UUIDV4,
+    allowNull: false,
+    autoIncrement: false,
+  }`;
+
+  expect(minivaluate(object, scope)).toEqual({
+    type: 'UUID',
+    primaryKey: true,
+    defaultValue: 'UUIDV4',
+    allowNull: false,
+    autoIncrement: false,
+  });
+})
+
+it('should match a simple sequelize definition', () => {
   let simple_definition = `
     module.exports = (sequelize, DataTypes) => {
       const Price = sequelize.define(
@@ -48,9 +83,7 @@ it('should match a simple sequelize definition', () => {
         ${template.String('model_name')},
         ${template.Object('model_definition', {
           key: template.Identifier,
-          value: template.Expression(null, {
-            scope: scope,
-          }),
+          value: template.Expression,
         })}
       );
 
@@ -122,6 +155,26 @@ it('should match a single key: value entry', () => {
   expect(definition_template.match(simple_definition)).toMatchSnapshot();
 });
 
+
+it('should match multiple expression', () => {
+  let simple_definition = `
+  let x = 10;
+  let y = Math.random();
+  let z = x * y;
+
+  module.exports = z;
+  `;
+
+  let definition_template = template.statements`
+  ${template.many('expressions', template.Statement)}
+
+  module.exports = ${template.Identifier('var')};
+  `;
+
+  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+});
+
+
 // TODO HARD
 it.skip('should match a repeated single key: value entry', () => {
   let simple_definition = `
@@ -147,23 +200,6 @@ it.skip('should match a repeated single key: value entry', () => {
   expect(definition_template.match(simple_definition)).toMatchSnapshot();
 });
 
-it('should match multiple expression', () => {
-  let simple_definition = `
-    let x = 10;
-    let y = Math.random();
-    let z = x * y;
-
-    module.exports = z;
-  `;
-
-  let definition_template = template.statements`
-    ${template.many('expressions', template.Statement)}
-
-    module.exports = ${template.Identifier('var')};
-  `;
-
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
-});
 
 // TODO HARD
 it.skip('should make sense of this?', () => {

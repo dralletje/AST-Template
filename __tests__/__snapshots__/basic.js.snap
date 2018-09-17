@@ -5,8 +5,7 @@ Object {
   "areas": Object {
     "optional_found": Array [],
     "value": Object {
-      "mismatches": Array [],
-      "value": Array [
+      "entries": Array [
         Object {
           "key": Object {
             "property": "id",
@@ -19,7 +18,6 @@ Object {
     },
     "var": "result",
   },
-  "mismatches": Array [],
 }
 `;
 
@@ -30,8 +28,7 @@ Object {
       "result.name = 'Cool';",
     ],
     "value": Object {
-      "mismatches": Array [],
-      "value": Array [
+      "entries": Array [
         Object {
           "key": "id",
           "value": "hey",
@@ -40,7 +37,6 @@ Object {
     },
     "var": "result",
   },
-  "mismatches": Array [],
 }
 `;
 
@@ -49,51 +45,49 @@ Object {
   "areas": Object {
     "model": "Price",
     "model_definition": Object {
-      "mismatches": Array [],
-      "value": Array [
+      "entries": Array [
         Object {
           "key": "id",
-          "value": Object {
-            "allowNull": false,
-            "autoIncrement": false,
-            "defaultValue": "UUIDV4",
-            "primaryKey": true,
-            "type": "UUID",
-          },
+          "value": "{
+  type: DataTypes.UUID,
+  primaryKey: true,
+  defaultValue: DataTypes.UUIDV4,
+  allowNull: false,
+  autoIncrement: false
+}",
         },
         Object {
           "key": "shape",
-          "value": "STRING",
+          "value": "DataTypes.STRING",
         },
         Object {
           "key": "color",
-          "value": "STRING",
+          "value": "DataTypes.STRING",
         },
         Object {
           "key": "clarity",
-          "value": "STRING",
+          "value": "DataTypes.STRING",
         },
         Object {
           "key": "lowSize",
-          "value": "DECIMAL",
+          "value": "DataTypes.DECIMAL",
         },
         Object {
           "key": "highSize",
-          "value": "DECIMAL",
+          "value": "DataTypes.DECIMAL",
         },
         Object {
           "key": "caratPrice",
-          "value": "DECIMAL",
+          "value": "DataTypes.DECIMAL",
         },
         Object {
           "key": "date",
-          "value": "STRING",
+          "value": "DataTypes.STRING",
         },
       ],
     },
     "model_name": "Price",
   },
-  "mismatches": Array [],
 }
 `;
 
@@ -104,7 +98,6 @@ Object {
     "type_description": "hey",
     "var": "result",
   },
-  "mismatches": Array [],
 }
 `;
 
@@ -118,6 +111,5 @@ Object {
     ],
     "var": "z",
   },
-  "mismatches": Array [],
 }
 `;
