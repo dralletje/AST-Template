@@ -1,6 +1,6 @@
-let { template } = require('../app.js');
+let { template } = require('../astemplate.js');
 
-it('should match a stock', () => {
+it('should match a stock file', () => {
   // let scope = {
   //   DataTypes: {
   //     UUID: 'UUID',
@@ -15,7 +15,7 @@ it('should match a stock', () => {
 
     let fetch_stock = async (job) => {
       let response = await fetch(
-        'http://www.sunrisediamonds.com.hk/inventory/Wgc.json'
+        '<redacted though it is still in the git history fuck>'
       );
       let diamonds = await response.json();
 
@@ -24,23 +24,23 @@ it('should match a stock', () => {
         iterate.first_is_headers,
         iterate.filter(x => x.Lab === 'GIA'),
         iterate.map((diamond) => {
-          let cert_number = diamond['Certi No.'];
+          let cert_number = diamond['Certificate Number'];
           let image_url =
-            (diamond['Other IMG'] || '').includes('viewimg')
-            ? \`https://www.sunrisediamonds.com.hk/img/\${cert_number}/PR.jpg\`
-            : diamond['Other IMG']
+            (diamond['IMG'] || '').includes('viewimg')
+            ? \`<Also redacted but again fuck>\`
+            : diamond['IMG']
 
           return {
-            certificate_number: diamond['Certi No.'],
-            carats: Number(diamond.Cts),
+            certificate_number: diamond['Certificate Number'],
+            carats: Number(diamond['Carats']),
 
-            supplier_name: 'sunrisediamonds', // TODO Check this
-            supplier_stockId: diamond['Ref. No'],
+            supplier_name: '<hehehe>', // TODO Check this
+            supplier_stockId: diamond['Reference Number'],
 
-            price: Number(diamond['Net Amt($)']),
-            discount: Number(diamond['Disc(%)']),
+            price: Number(diamond['Net Amount $$']),
+            discount: Number(diamond['Discount %%']),
             image: image_url,
-            v360: diamond['Other Video'],
+            v360: diamond['Video'],
           };
         }),
       ])(diamonds)

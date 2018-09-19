@@ -139,7 +139,7 @@ exports[`should match function call with variable arguments 1`] = `
 Object {
   "areas": Object {
     "arguments": Array [
-      "'Current working directory:'",
+      "\\"Current working directory:\\"",
       "process.cwd()",
     ],
   },
@@ -155,15 +155,6 @@ Object {
       "let z = x * y;",
     ],
     "var": "z",
-  },
-}
-`;
-
-exports[`should not match shorthand object entries to real object entries 1`] = `
-Object {
-  "areas": Object {
-    "entries": Array [],
-    "var": "result",
   },
 }
 `;

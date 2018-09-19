@@ -1,4 +1,4 @@
-let { template } = require('../app.js');
+let { template } = require('../astemplate.js');
 let { minivaluate } = require('../minivaluate.js');
 
 it('should minivaluate some expression', () => {
@@ -208,7 +208,7 @@ it('should work with multiple repeats', () => {
   expect(definition_template.match(simple_definition)).toMatchSnapshot();
 });
 
-it.only('should not work if the repeats don\'t work', () => {
+it('should not work if the repeats don\'t work', () => {
   let simple_definition = `
     pre_statement();
     pre_statement2();
@@ -227,7 +227,7 @@ it.only('should not work if the repeats don\'t work', () => {
   }).toThrow();
 });
 
-it.only('should not work if template does not suffice', () => {
+it('should not work if template does not suffice', () => {
   let simple_definition = `
     matching_statement();
     not_matching_statement();
