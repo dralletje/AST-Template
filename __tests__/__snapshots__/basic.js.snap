@@ -1,5 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`should be greedy 1`] = `
+Object {
+  "areas": Object {
+    "post_expression": Array [],
+    "pre_expression": Array [
+      "module.exports = 10;",
+    ],
+    "var": "12",
+  },
+}
+`;
+
 exports[`should match a definition with optionals 1`] = `
 Object {
   "areas": Object {
@@ -35,6 +47,28 @@ Object {
         },
       ],
     },
+    "var": "result",
+  },
+}
+`;
+
+exports[`should match a repeated single key: value entry 1`] = `
+Object {
+  "areas": Object {
+    "entries": Array [
+      Object {
+        "key": "id",
+        "type_description": "hey",
+      },
+      Object {
+        "key": "xd",
+        "type_description": "jo",
+      },
+      Object {
+        "key": "fp",
+        "type_description": "hi",
+      },
+    ],
     "var": "result",
   },
 }
@@ -101,6 +135,17 @@ Object {
 }
 `;
 
+exports[`should match function call with variable arguments 1`] = `
+Object {
+  "areas": Object {
+    "arguments": Array [
+      "'Current working directory:'",
+      "process.cwd()",
+    ],
+  },
+}
+`;
+
 exports[`should match multiple expression 1`] = `
 Object {
   "areas": Object {
@@ -110,6 +155,30 @@ Object {
       "let z = x * y;",
     ],
     "var": "z",
+  },
+}
+`;
+
+exports[`should not match shorthand object entries to real object entries 1`] = `
+Object {
+  "areas": Object {
+    "entries": Array [],
+    "var": "result",
+  },
+}
+`;
+
+exports[`should work with multiple repeats 1`] = `
+Object {
+  "areas": Object {
+    "post": Array [
+      "post_statement();",
+      "post_statement2();",
+    ],
+    "pre": Array [
+      "pre_statement();",
+      "pre_statement2();",
+    ],
   },
 }
 `;

@@ -174,9 +174,75 @@ it('should match multiple expression', () => {
   expect(definition_template.match(simple_definition)).toMatchSnapshot();
 });
 
+it('should match function call with variable arguments', () => {
+  let simple_definition = `
+    console.log('Current working directory:', process.cwd());
+  `;
 
-// TODO HARD
-it.skip('should match a repeated single key: value entry', () => {
+  let definition_template = template.statements`
+    console.log(${template.many('arguments', template.Expression)});
+  `;
+
+  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+});
+
+it('should work with multiple repeats', () => {
+  let simple_definition = `
+    pre_statement();
+    pre_statement2();
+
+    my_special_function();
+
+    post_statement();
+    post_statement2();
+  `;
+
+  let definition_template = template.statements`
+    ${template.many('pre', template.Statement)};
+
+    my_special_function();
+
+    ${template.many('post', template.Statement)};
+  `;
+
+  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+});
+
+it.only('should not work if the repeats don\'t work', () => {
+  let simple_definition = `
+    pre_statement();
+    pre_statement2();
+    post_statement();
+    post_statement2();
+  `;
+
+  let definition_template = template.statements`
+    ${template.many('functions', template.statement`
+      my_special_function();
+    `)};
+  `;
+
+  expect(() => {
+    definition_template.match(simple_definition);
+  }).toThrow();
+});
+
+it.only('should not work if template does not suffice', () => {
+  let simple_definition = `
+    matching_statement();
+    not_matching_statement();
+  `;
+
+  let definition_template = template.statements`
+    matching_statement();
+  `;
+
+  expect(() => {
+    definition_template.match(simple_definition);
+  }).toThrow();
+});
+
+it('should match a repeated single key: value entry', () => {
   let simple_definition = `
     let result = {
       id: 'hey',
@@ -188,8 +254,8 @@ it.skip('should match a repeated single key: value entry', () => {
 
   let definition_template = template.statements`
     let ${template.Identifier('var')} = {
-      // Only one though :(
-      ${template.many('entries', template.not_even_sure`
+      // Multiple!!!
+      ${template.many('entries', template.entry`
         ${template.Identifier('key')}: ${template.String('type_description')}
       `)}
     }
@@ -200,18 +266,38 @@ it.skip('should match a repeated single key: value entry', () => {
   expect(definition_template.match(simple_definition)).toMatchSnapshot();
 });
 
+it('should not match shorthand object entries to real object entries', () => {
+  let simple_definition = `
+    let result = {
+      id: 'hey',
+    };
+    module.exports = result;
+  `;
 
-// TODO HARD
-it.skip('should make sense of this?', () => {
+  let definition_template = template.statements`
+    let ${template.Identifier('var')} = {
+      // Only one though :(
+      ${template.Identifier('shorthand')}
+    }
+
+    module.exports = ${template.Identifier('var')};
+  `;
+
+  expect(() => {
+    definition_template.match(simple_definition)
+  }).toThrow();
+});
+
+it('should be greedy', () => {
   let simple_definition = `
     module.exports = 10;
     module.exports = 12;
   `;
 
   let definition_template = template.statements`
-    ${template.optional('expression', template.Expression)}
-    module.exports = ${template.Identifier('var')};
-    ${template.optional('expression', template.expression`${template.Expression('type_description')}`)}
+    ${template.optional('pre_expression', template.Statement)}
+    module.exports = ${template.Expression('var')};
+    ${template.optional('post_expression', template.Statement)}
   `;
 
   expect(definition_template.match(simple_definition)).toMatchSnapshot();

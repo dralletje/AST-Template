@@ -3,7 +3,7 @@
 exports[`should match a stock 1`] = `
 Object {
   "areas": Object {
-    "arg": Array [
+    "arguments": Array [
       "job",
     ],
     "export": "{
@@ -15,8 +15,14 @@ Object {
       "let diamonds = await response.json();",
     ],
     "flow_functions": Array [
-      "iterate.filter(x => x.Lab === 'GIA')",
-      "iterate.map(diamond => {
+      Object {
+        "iterate_fn": "first_is_headers",
+      },
+      Object {
+        "func": "x => x.Lab === 'GIA'",
+      },
+      Object {
+        "func": "diamond => {
   let cert_number = diamond['Certi No.'];
   let image_url = (diamond['Other IMG'] || '').includes('viewimg') ? \`https://www.sunrisediamonds.com.hk/img/\${cert_number}/PR.jpg\` : diamond['Other IMG'];
   return {
@@ -30,13 +36,20 @@ Object {
     image: image_url,
     v360: diamond['Other Video']
   };
-})",
+}",
+      },
     ],
     "import_functions": Array [
-      "let iterate = require('./utils/iterate');",
-      "let {
+      Object {
+        "exp": "require('./utils/iterate')",
+        "id": "iterate",
+      },
+      Object {
+        "exp": "require('lodash')",
+        "id": "{
   flow
-} = require('lodash');",
+}",
+      },
     ],
     "rows_variable": "diamonds",
   },

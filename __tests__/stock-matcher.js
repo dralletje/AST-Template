@@ -1,4 +1,4 @@
-let { template, minivaluate } = require('../app.js');
+let { template } = require('../app.js');
 
 it('should match a stock', () => {
   // let scope = {
@@ -21,6 +21,7 @@ it('should match a stock', () => {
 
 
       return flow([
+        iterate.first_is_headers,
         iterate.filter(x => x.Lab === 'GIA'),
         iterate.map((diamond) => {
           let cert_number = diamond['Certi No.'];
@@ -49,13 +50,29 @@ it('should match a stock', () => {
   `;
 
   let definition_template = template.statements`
-    ${template.many('import_functions', template.Statement)}
+    ${template.many('import_functions', template.either(null, [
+      template.statement`let ${template.Pattern('id')} = ${template.Expression('exp')}`,
+      template.Statement,
+    ]))}
 
-    let ${template.Identifier('fetch_fn')} = async (${template.optional('arg', template.Identifier)}) => {
+    let ${template.Identifier('fetch_fn')} = async (${template.arguments('arguments')}) => {
       ${template.many('fetch_functions', template.Statement)}
 
       return flow([
-        ${template.many('flow_functions', template.Expression)},
+        ${template.many('flow_functions', template.either(null, [
+          template.expression`
+            iterate.map(${template.function_expression('func')})
+          `,
+          template.expression`
+            iterate.filter(${template.function_expression('func')})
+          `,
+          template.expression`
+            iterate.${template.Identifier('iterate_fn')}(${template.many('inputs', template.Expression)})
+          `,
+          template.expression`
+            iterate.${template.Identifier('iterate_fn')}
+          `,
+        ]))}
       ])(${template.Identifier('rows_variable')})
     }
 
