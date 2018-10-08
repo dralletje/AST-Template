@@ -266,6 +266,57 @@ it('should match a repeated single key: value entry', () => {
   expect(definition_template.match(simple_definition)).toMatchSnapshot();
 });
 
+it('should match objects in any order', () => {
+  let simple_definition = `
+    let result = {
+      id: 'hey',
+      xd: 'jo',
+      fp: 'hi',
+    };
+    module.exports = result;
+  `;
+
+  let definition_template = template.statements`
+    let ${template.Identifier('var')} = {
+      xd: 'jo',
+      id: 'hey',
+      fp: 'hi',
+    }
+
+    module.exports = ${template.Identifier('var')};
+  `;
+
+  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+});
+
+it('should match a mix between defined and rest entries', () => {
+  let simple_definition = `
+    let result = {
+      fp: 'hi',
+      id: 'hey',
+      xd: 'jo',
+    };
+    module.exports = result;
+  `;
+
+  let definition_template = template.statements`
+    let ${template.Identifier('var')} = {
+      // Multiple!!!
+      id: ${template.Expression('id')},
+      ${template.optional('xd', template.entry`
+        xd: ${template.Expression('main')}
+      `)},
+      ${template.many('entries', template.entry`
+        ${template.Identifier('key')}: ${template.String('type_description')}
+      `)}
+    }
+
+    module.exports = ${template.Identifier('var')};
+  `;
+
+  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+});
+
 it('should not match shorthand object entries to real object entries', () => {
   let simple_definition = `
     let result = {

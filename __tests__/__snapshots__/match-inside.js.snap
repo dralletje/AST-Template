@@ -1,0 +1,62 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should find React Components inside a file 1`] = `
+Array [
+  Object {
+    "areas": Object {
+      "path": "\\"/asdf\\"",
+      "x": "10",
+    },
+  },
+  Object {
+    "areas": Object {
+      "path": "\\"/heythere\\"",
+      "x": "<Route path=\\"/heythere\\" x={12} />",
+    },
+  },
+]
+`;
+
+exports[`should match a react component 1`] = `
+Object {
+  "areas": Object {
+    "hey": "\\"/asdf\\"",
+  },
+}
+`;
+
+exports[`should match a react component 2`] = `
+Object {
+  "areas": Object {
+    "hey": "\\"/asdf\\"",
+    "z": "path",
+  },
+}
+`;
+
+exports[`should match a shorthand jsx attribute 1`] = `
+Object {
+  "areas": Object {},
+}
+`;
+
+exports[`should match multiple boolean attributes 1`] = `
+Object {
+  "areas": Object {
+    "l": "exact",
+  },
+}
+`;
+
+exports[`should match multiple jsx attributes 1`] = `
+Object {
+  "areas": Object {
+    "y": Array [
+      Object {
+        "hey": "\\"/asdf\\"",
+        "l": "path",
+      },
+    ],
+  },
+}
+`;

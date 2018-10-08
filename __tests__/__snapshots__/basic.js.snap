@@ -52,6 +52,26 @@ Object {
 }
 `;
 
+exports[`should match a mix between defined and rest entries 1`] = `
+Object {
+  "areas": Object {
+    "entries": Array [
+      Object {
+        "key": "fp",
+        "type_description": "hi",
+      },
+    ],
+    "id": "\\"hey\\"",
+    "var": "result",
+    "xd": Array [
+      Object {
+        "main": "\\"jo\\"",
+      },
+    ],
+  },
+}
+`;
+
 exports[`should match a repeated single key: value entry 1`] = `
 Object {
   "areas": Object {
@@ -155,6 +175,14 @@ Object {
       "let z = x * y;",
     ],
     "var": "z",
+  },
+}
+`;
+
+exports[`should match objects in any order 1`] = `
+Object {
+  "areas": Object {
+    "var": "result",
   },
 }
 `;
