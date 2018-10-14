@@ -2,7 +2,7 @@ let generate_unsafe = require('babel-generator').default;
 let { parse, parseExpression } = require('@babel/parser');
 let traverse = require('@babel/traverse');
 let { namedTypes: t } = require('ast-types');
-let { zip, isEqual, omit, isObject, range, cloneDeep, get } = require('lodash');
+let { zip, isEqual, omit, isObject, range, cloneDeep, get, flatten } = require('lodash');
 let chalk = require('chalk');
 
 let generate = (ast) => {
@@ -79,7 +79,11 @@ let container_nodes = {
       container.type === 'StringLiteral' ? container : container.expression,
     wrap: (expression) => {
       if (!t.Expression.check(expression)) {
-        throw new Error(`Trying to wrap non-expression (${expression.type}) into JSXExpressionContainer`);
+        throw new Error(
+          `Trying to wrap non-expression (${
+            expression.type
+          }) into JSXExpressionContainer`
+        );
       }
 
       return {
@@ -139,7 +143,7 @@ let is_primitive = (x) => !isObject(x);
 
 let match_subtemplate = ({ template: _template, node }) => {
   if (typeof _template === 'function') {
-    let x = template.expression`${_template('basic')}`.match(node);
+    let x = astemplate.expression`${_template('basic')}`.match(node);
     return {
       areas: x.areas.basic,
     };
@@ -151,7 +155,7 @@ let match_subtemplate = ({ template: _template, node }) => {
         ..._template,
         name: 'basic',
       };
-      let x = template.expression`${t}`.match(node);
+      let x = astemplate.expression`${t}`.match(node);
       return {
         areas: x.areas.basic,
       };
@@ -442,14 +446,11 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
       throw new MismatchError(`Types not matching (${mismatch})`);
     }
 
-    let result = map_fn(
-      match_filled_in,
-      (template_sub, filled_sub) => {
-        // TODO I'm not entirely sure if this `placeholders` is the right one to pass on,
-        // .... it seems like this would not contain the "sub placeholders" that we actually care about
-        return match_ast(template_sub, filled_sub, placeholders);
-      }
-    );
+    let result = map_fn(match_filled_in, (template_sub, filled_sub) => {
+      // TODO I'm not entirely sure if this `placeholders` is the right one to pass on,
+      // .... it seems like this would not contain the "sub placeholders" that we actually care about
+      return match_ast(template_sub, filled_sub, placeholders);
+    });
 
     return {
       areas: {
@@ -526,7 +527,7 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
           });
           areas = {
             ...areas,
-            ...result.areas
+            ...result.areas,
           };
         }
       } else {
@@ -583,6 +584,8 @@ let generate_placeholders = (text, nodes) => {
   let next_placeholder_id = 0;
   let placeholders = {};
 
+  text = Array.isArray(text) ? text : [text];
+
   let source = zip(text, nodes)
     .map(([text, node]) => {
       if (typeof node === 'string') {
@@ -621,7 +624,7 @@ let expression = (text, ...nodes) => {
 
 let statements = (text, ...nodes) => {
   let { placeholders, source } = generate_placeholders(text, nodes);
-  let template_ast = parse(source, babeloptions);
+  let template_ast = parse(source.trim(), babeloptions);
 
   return {
     placeholders: placeholders,
@@ -637,17 +640,100 @@ let statements = (text, ...nodes) => {
 };
 
 let fill_in_template = (template, values) => {
+  template =
+    typeof template === 'function'
+      ? template(null)
+      : template;
+
+  if (template.ast == null) {
+    let sub_placeholder_name = template.name
+    template = astemplate.statements`${template}`
+    let real_values = values;
+    values = { [sub_placeholder_name]: real_values };
+  }
+
   let { placeholders, ast } = template;
   let clone_ast = cloneDeep(ast);
 
+  // Mmmmmeh TODO
+  if (!t.File.check(clone_ast) && !t.Program.check(clone_ast) && clone_ast.type !== 'File' && clone_ast.type !== 'Program') {
+    let statement = astemplate.statements``;
+    statement.ast.program.body[0] = {
+      type: 'ExpressionStatement',
+      expression: clone_ast,
+    };
+    clone_ast = statement.ast;
+  }
+
   traverse.default(clone_ast, {
-    noScope: true,
     enter(path) {
       if (is_placeholder(path.node)) {
+        path.shouldSkip = true;
+
         let placeholder = get_placeholder(path.node, placeholders);
         let value = values[placeholder.name];
-        path.replaceWith(placeholder.wrap(value.ast || value));
+
+        if (!value) {
+          throw new Error(`No value for '${placeholder.name}'`);
+        }
+        value = value.ast || value;
+
+        if (placeholder.type === EITHER_TYPE) {
+          let errors = [];
+          for (let possibility of placeholder.possibilities) {
+            try {
+              // console.log(`possibility:`, possibility)
+              let x = fill_in_template(possibility, value);
+              if (!x) {
+                console.log(`possibility:`, possibility);
+                console.log(`values:`, values);
+                console.log(`FALSY x:`, x);
+              }
+
+              path.replaceWith(placeholder.wrap(x));
+              return;
+            } catch (err) {
+              errors.push(err);
+              continue;
+            }
+          }
+
+          let err = new Error(`Didn't match any subtemplate`);
+          err.errors = errors;
+          console.log(`errors:`, errors)
+          throw err;
+        }
+
+        if (placeholder.type === REPEAT_TYPE) {
+          if (value.type === 'File') {
+            value = value.program.body;
+          }
+
+          let filled_in_array = (value || []).map((v) => {
+            let x = fill_in_template(placeholder.subtemplate, v);
+            if (!x) {
+              console.log(`placeholder.subtemplate:`, placeholder.subtemplate);
+              throw new Error(
+                `Undefined value, not good (v = ${JSON.stringify(
+                  v
+                )}, p = ${JSON.stringify(placeholder)})`
+              );
+            }
+            return x;
+          });
+
+          // TODO THis is stupid
+          let items = flatten_statements(filled_in_array)
+          path.replaceWithMultiple(items);
+          return;
+        }
+
+        if (typeof value === 'string') {
+          throw new Error(`Value '${value}' is string, should be ast`);
+        }
+
         path.shouldSkip = true;
+        path.replaceWith(placeholder.wrap(value));
       }
     },
   });
@@ -655,20 +741,44 @@ let fill_in_template = (template, values) => {
   return clone_ast;
 };
 
-let get_nodepath_fullpath = (path) => {
+let flatten_statements = (array) => {
+  return flatten(array.map(x => {
+    if (x.program) {
+      return flatten_statements(x.program.body);
+    } else {
+      return x;
+    }
+  }))
+}
+
+let get_path_parents = function*(path) {
   let current_path = path;
+  while (current_path != null) {
+    yield current_path;
+    current_path = current_path.parentPath;
+  }
+};
+
+let get_nodepath_fullpath = (path) => {
   let fullpath = [];
 
-  while (current_path != null) {
+  for (let current_path of get_path_parents(path)) {
     fullpath = [
       ...[current_path.listKey, current_path.key].filter((x) => x != null),
       ...fullpath,
     ];
-
-    current_path = current_path.parentPath;
   }
 
   return fullpath;
+};
+
+let get_parent_expression = (path) => {
+  for (let parent of get_path_parents(path)) {
+    if (parent.node.isExpression()) {
+      return parent;
+    }
+  }
+  throw new Error(`Node does not have a parent... ('${path.type}')`);
 };
 
 let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
@@ -688,7 +798,7 @@ let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
     ];
   }
 
-  let placeholder_i_guess = template.expression`${prefix}${template.Expression(
+  let placeholder_i_guess = astemplate.expression`${prefix}${astemplate.Expression(
     'x'
   )}${suffix}`;
 
@@ -776,7 +886,7 @@ let match_inside = (filled_in_source, template) => {
 
 let REPEAT_TYPE = Symbol('Repeat a part a certain number of times');
 let EITHER_TYPE = Symbol('Matches one of multiple subtemplates');
-let template = {
+let astemplate = {
   expression: expression,
   statements: statements,
   entry: (...template_option) => unparsable`{ ${template_option} }`,
@@ -842,7 +952,7 @@ let template = {
   },
 
   arguments: (name) => {
-    return template.many(name, template.Pattern);
+    return astemplate.many(name, astemplate.Pattern);
   },
 
   Expression: (name) => {
@@ -868,9 +978,9 @@ let template = {
   },
 
   function_expression: (name) => {
-    return template.either(name, [
-      template.FunctionExpression,
-      template.ArrowFunctionExpression,
+    return astemplate.either(name, [
+      astemplate.FunctionExpression,
+      astemplate.ArrowFunctionExpression,
     ]);
   },
 
@@ -933,4 +1043,4 @@ let template = {
   },
 };
 
-module.exports = { template, match_inside, fill_in_template };
+module.exports = { template: astemplate, astemplate, match_inside, fill_in_template };
