@@ -108,7 +108,7 @@ it('should fill in a template with a either and a repeat', () => {
   ).toMatchSnapshot();
 });
 
-it.only('should fill in a teomplate with a either and a repeat on an expression', () => {
+it('should fill in a template with a either and a repeat on an expression', () => {
   let definition_template = template.statements`
     return [
       ${template.many(
@@ -133,6 +133,66 @@ it.only('should fill in a teomplate with a either and a repeat on an expression'
         }, {
           expression: template.expression`10`,
         }],
+      })
+    ).code
+  ).toMatchSnapshot();
+});
+
+it('should fill in anonymous many', () => {
+  let definition_template = template.statements`
+    ${template.many(
+      'statements',
+      template.Statement
+    )}
+  `;
+
+  expect(
+    generate(
+      fill_in_template(definition_template, {
+        statements: [
+          template.expression`"String"`,
+          template.expression`10`,
+        ],
+      })
+    ).code
+  ).toMatchSnapshot();
+});
+
+it('should fill in a function expression', () => {
+  let definition_template = template.statements`
+    let x = ${template.function_expression('fn')};
+  `;
+
+  expect(
+    generate(
+      fill_in_template(definition_template, {
+        fn: template.expression`(x) => {
+          return x * 2
+        }`
+      })
+    ).code
+  ).toMatchSnapshot();
+});
+
+it('should fill in object entries', () => {
+  let definition_template = template.statements`
+    let x = {
+      ${template.many('entries', template.entry`
+        ${template.Identifier('key')}: ${template.Expression('value')},
+      `)}
+    }
+  `;
+
+  expect(
+    generate(
+      fill_in_template(definition_template, {
+        entries: [{
+          key: template.expression`key`,
+          value: template.expression`10`,
+        }, {
+          key: template.expression`key2`,
+          value: template.expression`12`,
+        }]
       })
     ).code
   ).toMatchSnapshot();

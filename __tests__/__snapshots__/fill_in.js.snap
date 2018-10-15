@@ -1,5 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`should fill in a function expression 1`] = `
+"let x = x => {
+  return x * 2;
+};"
+`;
+
 exports[`should fill in a simple template 1`] = `"let variable = \\"String\\";"`;
 
 exports[`should fill in a template with a either 1`] = `"let variable = \\"String\\";"`;
@@ -12,10 +18,25 @@ exports[`should fill in a template with a either and a repeat 1`] = `
 let variable = 10;"
 `;
 
+exports[`should fill in a template with a either and a repeat on an expression 1`] = `
+"return [\\"String\\", 10
+];"
+`;
+
 exports[`should fill in a template with a repeat 1`] = `
 "let variable = \\"String\\";
 
 let variable2 = \\"String2\\";"
 `;
 
-exports[`should fill in a teomplate with a either and a repeat on an expression 1`] = `"return [(\\"String\\", 10)];"`;
+exports[`should fill in anonymous many 1`] = `
+"\\"String\\"
+10"
+`;
+
+exports[`should fill in object entries 1`] = `
+"let x = {
+  key: 10,
+  key2: 12
+};"
+`;

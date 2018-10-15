@@ -2,7 +2,17 @@ let generate_unsafe = require('babel-generator').default;
 let { parse, parseExpression } = require('@babel/parser');
 let traverse = require('@babel/traverse');
 let { namedTypes: t } = require('ast-types');
-let { zip, isEqual, omit, isObject, range, cloneDeep, get, flatten } = require('lodash');
+let {
+  zip,
+  isEqual,
+  omit,
+  isObject,
+  range,
+  cloneDeep,
+  get,
+  flatten,
+  mapValues,
+} = require('lodash');
 let chalk = require('chalk');
 
 let generate = (ast) => {
@@ -117,6 +127,9 @@ let get_contained_node = (node) => {
 };
 
 let is_placeholder = (_node) => {
+  if (_node == null) {
+    return false;
+  }
   let node = get_contained_node(_node);
   return (
     (node.type === 'Identifier' || node.type === 'JSXIdentifier') &&
@@ -639,117 +652,113 @@ let statements = (text, ...nodes) => {
   };
 };
 
-let fill_in_template = (template, values) => {
-  template =
-    typeof template === 'function'
-      ? template(null)
-      : template;
-
-  if (template.ast == null) {
-    let sub_placeholder_name = template.name
-    template = astemplate.statements`${template}`
-    let real_values = values;
-    values = { [sub_placeholder_name]: real_values };
+let fill_in_template = (template, values, placeholders) => {
+  if (typeof template === 'function') {
+    template = template(null);
+  }
+  if (!isObject(template)) {
+    return template;
   }
 
-  let { placeholders, ast } = template;
-  let clone_ast = cloneDeep(ast);
+  if (is_placeholder(template)) {
+    let placeholder = get_placeholder(template, placeholders);
+    let value = values[placeholder.name];
 
-  // Mmmmmeh TODO
-  if (!t.File.check(clone_ast) && !t.Program.check(clone_ast) && clone_ast.type !== 'File' && clone_ast.type !== 'Program') {
-    let statement = astemplate.statements``;
-    statement.ast.program.body[0] = {
-      type: 'ExpressionStatement',
-      expression: clone_ast,
-    };
-    clone_ast = statement.ast;
-  }
-
-  traverse.default(clone_ast, {
-    enter(path) {
-      if (is_placeholder(path.node)) {
-        path.shouldSkip = true;
-
-        let placeholder = get_placeholder(path.node, placeholders);
-        let value = values[placeholder.name];
-
-        if (!value) {
-          throw new Error(`No value for '${placeholder.name}'`);
+    if (placeholder.type === EITHER_TYPE) {
+      let errors = [];
+      for (let possibility of placeholder.possibilities) {
+        try {
+          return fill_in_template(possibility, value);
+        } catch (err) {
+          errors.push(err);
+          continue;
         }
-        value = value.ast || value;
-
-        if (placeholder.type === EITHER_TYPE) {
-          let errors = [];
-          for (let possibility of placeholder.possibilities) {
-            try {
-              // console.log(`possibility:`, possibility)
-              let x = fill_in_template(possibility, value);
-              if (!x) {
-                console.log(`possibility:`, possibility);
-                console.log(`values:`, values);
-                console.log(`FALSY x:`, x);
-              }
-
-              path.replaceWith(placeholder.wrap(x));
-              return;
-            } catch (err) {
-              errors.push(err);
-              continue;
-            }
-          }
-
-          let err = new Error(`Didn't match any subtemplate`);
-          err.errors = errors;
-          console.log(`errors:`, errors)
-          throw err;
-        }
-
-        if (placeholder.type === REPEAT_TYPE) {
-          if (value.type === 'File') {
-            value = value.program.body;
-          }
-
-          let filled_in_array = (value || []).map((v) => {
-            let x = fill_in_template(placeholder.subtemplate, v);
-            if (!x) {
-              console.log(`placeholder.subtemplate:`, placeholder.subtemplate);
-              throw new Error(
-                `Undefined value, not good (v = ${JSON.stringify(
-                  v
-                )}, p = ${JSON.stringify(placeholder)})`
-              );
-            }
-            return x;
-          });
-
-          // TODO THis is stupid
-          let items = flatten_statements(filled_in_array)
-          path.replaceWithMultiple(items);
-          return;
-        }
-
-        if (typeof value === 'string') {
-          throw new Error(`Value '${value}' is string, should be ast`);
-        }
-
-        path.shouldSkip = true;
-        path.replaceWith(placeholder.wrap(value));
       }
-    },
-  });
 
-  return clone_ast;
+      let err = new Error(`Didn't match any subtemplate`);
+      err.errors = errors;
+      throw err;
+    }
+
+    // NOTE I guess this should never happen
+    return value.ast;
+  }
+
+  if (placeholders == null) {
+    if (t.Node.check(template)) {
+      return template;
+    } else if (template.ast) {
+      return fill_in_template(template.ast, values, template.placeholders)
+    } else {
+      // It is most likely a standalone placeholder
+      if (template.type === EITHER_TYPE) {
+        let errors = [];
+        for (let possibility of template.possibilities) {
+          try {
+            return fill_in_template(possibility, values);
+          } catch (err) {
+            errors.push(err);
+            continue;
+          }
+        }
+
+        let err = new Error(`Didn't match any subtemplate`);
+        err.errors = errors;
+        throw err;
+      } else {
+        // TODO Check if the input matches the standalone template/type
+        return values.ast;
+      }
+    }
+  }
+
+  if (!t.Node.check(template)) {
+    console.log(`template:`, template);
+    throw new Error('Template is not a node')
+  }
+
+  template = remove_keys(template);
+
+  return mapValues(template, (node, key) => {
+    if (Array.isArray(node)) {
+      return flatten(
+        node.map((list_item) => {
+          let possible_repeat = get_placeholder(list_item, placeholders);
+          if (possible_repeat && possible_repeat.type === REPEAT_TYPE) {
+            let value_list = values[possible_repeat.name];
+            if (!Array.isArray(value_list)) {
+              if (value_list.ast && value_list.ast.type === 'File') {
+                // Passed in template.statements`...`, need to get the individual statements
+                value_list = value_list.ast.program.body;
+              } else {
+                throw new Error('value_list is not an array');
+              }
+            }
+            return value_list.map((value) => {
+              return fill_in_template(possible_repeat.subtemplate, value)
+            });
+          } else {
+            return [fill_in_template(list_item, values, placeholders)];
+          }
+        })
+      );
+    } else {
+      return fill_in_template(node, values, placeholders);
+    }
+  });
 };
 
 let flatten_statements = (array) => {
-  return flatten(array.map(x => {
-    if (x.program) {
-      return flatten_statements(x.program.body);
-    } else {
-      return x;
-    }
-  }))
-}
+  return flatten(
+    array.map((x) => {
+      if (x.program) {
+        return flatten_statements(x.program.body);
+      } else {
+        return x;
+      }
+    })
+  );
+};
 
 let get_path_parents = function*(path) {
   let current_path = path;
@@ -836,6 +845,7 @@ let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
         })
       );
     },
+    placeholders: x.placeholders,
     ast: get(x.ast, placeholder_info.path),
   };
 };
@@ -1043,4 +1053,9 @@ let astemplate = {
   },
 };
 
-module.exports = { template: astemplate, astemplate, match_inside, fill_in_template };
+module.exports = {
+  template: astemplate,
+  astemplate,
+  match_inside,
+  fill_in_template,
+};

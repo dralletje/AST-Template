@@ -187,12 +187,13 @@ let show_stack = (error) => {
             }
           }
           if (fn.function_id === 'iterate.filter') {
+            let result = fill_in_template(template.expression`(row) => ${template.Expression('expression')}`, {
+              expression: template.expression(fn.config.filter_fn),
+            });
+
             return {
-              filter_fn: fill_in_template(template.expression`(row) => ${template.Expression('expression')}`, {
-                expression: template.expression(fn.config.filter_fn),
-              }),
-              // inputs: [template.expression(`${fn.config.skip}`)],
-            }
+              filter_fn: result,
+            };
           }
           if (fn.function_id === 'iterate.map') {
             return {
