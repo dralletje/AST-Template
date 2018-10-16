@@ -1,4 +1,4 @@
-let { template } = require('../astemplate.js');
+let { template } = require('../ast-template.js');
 let { minivaluate } = require('../minivaluate.js');
 
 it('should minivaluate some expression', () => {
@@ -242,14 +242,13 @@ it('should not work if template does not suffice', () => {
   }).toThrow();
 });
 
-it('should match a repeated single key: value entry', () => {
+it.only('should match a repeated single key: value entry', () => {
   let simple_definition = `
     let result = {
       id: 'hey',
       xd: 'jo',
       fp: 'hi',
     };
-    module.exports = result;
   `;
 
   let definition_template = template.statements`
@@ -259,11 +258,15 @@ it('should match a repeated single key: value entry', () => {
         ${template.Identifier('key')}: ${template.String('type_description')}
       `)}
     }
-
-    module.exports = ${template.Identifier('var')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  try {
+    expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  } catch (err) {
+    // console.log(`err.errors:`, JSON.stringify(err.path, null, 2));
+    console.log(`err:`, JSON.stringify(err, null, 2))
+    throw err;
+  }
 });
 
 it('should match objects in any order', () => {

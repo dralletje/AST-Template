@@ -1,4 +1,4 @@
-let { fill_in_template, template } = require('../astemplate.js');
+let { fill_in_template, template } = require('../ast-template.js');
 let generate = require('babel-generator').default;
 
 it('should fill in a simple template', () => {
@@ -169,6 +169,37 @@ it('should fill in a function expression', () => {
         fn: template.expression`(x) => {
           return x * 2
         }`
+      })
+    ).code
+  ).toMatchSnapshot();
+});
+
+it('should fill in a single entry into an object as expression', () => {
+  let definition_template = template.expression`{
+    ${template.Expression('x')}
+  }`;
+
+  expect(
+    generate(
+      fill_in_template(definition_template, {
+        x: template.entry`key: 10`.ast,
+      })
+    ).code
+  ).toMatchSnapshot();
+});
+
+it.skip('should fill in a single entry into an object', () => {
+  let definition_template = template.expression`{
+    ${template.entry`
+      ${template.Identifier('key')}: ${template.Expression('value')},
+    `}
+  }`;
+
+  expect(
+    generate(
+      fill_in_template(definition_template, {
+        key: template.expression`keyyy`,
+        value: template.expression`10000`,
       })
     ).code
   ).toMatchSnapshot();

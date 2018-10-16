@@ -70,6 +70,7 @@ let show_mismatch = (expected, received, vs = 'vs') => {
 class MismatchError extends Error {
   constructor(message) {
     super(message);
+    this.oops_message = message;
     this.name = 'MismatchError';
   }
 }
@@ -354,6 +355,7 @@ let match_unordered_array = ({
     //        2.1.2 It matches the value exactly, leave it be (maybe throw error still now)
     //        2.1.3 Throw error if it doesn't match
     //    2.2 If we don't have it yet, set it
+    let errors = [];
 
     // NOTE Change to filter for all matches
     templates: for (let template_element of template_array) {
@@ -367,7 +369,9 @@ let match_unordered_array = ({
 
           areas[repeat.name] = areas[repeat.name] || [];
           if (!Array.isArray(areas[repeat.name])) {
-            throw new Error(`Repeat '${repeat}' also has an non-array value..`);
+            throw new Error(
+              `Repeat '${repeat}' also has an non-array value..`
+            );
           }
 
           areas[repeat.name].push(result.areas);
@@ -387,11 +391,14 @@ let match_unordered_array = ({
           continue subjects;
         }
       } catch (err) {
-        continue templates;
+        errors.push(err);
+        continue templates; // eslint-disable-line
       }
     }
 
-    throw new MismatchError('None of the template element matched');
+    let error = new MismatchError('None of the template element matched');
+    error.errors = errors;
+    throw error;
   }
 
   return { areas };
@@ -414,6 +421,11 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
   // because these will never be equal (or mostly never, we don't care about them anyway)
   let node_template = remove_keys(_node_template);
   let node_filled_in = remove_keys(_node_filled_in);
+
+  // if (node_filled_in.properties && node_filled_in.properties[0] == null) {
+  //   console.trace('Damnit')
+  //   throw new MismatchError('Damnit')
+  // }
 
   // If the node we look at is a placeholder, we need to store the value we are currently at
   if (is_placeholder(node_template)) {
@@ -681,14 +693,18 @@ let fill_in_template = (template, values, placeholders) => {
     }
 
     // NOTE I guess this should never happen
-    return value.ast;
+    // console.log(`value:`, value)
+    // console.log(`values:`, values)
+    // console.log(`placeholders:`, placeholders)
+    // console.log(`template:`, template)
+    return value.ast ||  value;
   }
 
   if (placeholders == null) {
     if (t.Node.check(template)) {
       return template;
     } else if (template.ast) {
-      return fill_in_template(template.ast, values, template.placeholders)
+      return fill_in_template(template.ast, values, template.placeholders);
     } else {
       // It is most likely a standalone placeholder
       if (template.type === EITHER_TYPE) {
@@ -714,7 +730,7 @@ let fill_in_template = (template, values, placeholders) => {
 
   if (!t.Node.check(template)) {
     console.log(`template:`, template);
-    throw new Error('Template is not a node')
+    throw new Error('Template is not a node');
   }
 
   template = remove_keys(template);
@@ -735,7 +751,7 @@ let fill_in_template = (template, values, placeholders) => {
               }
             }
             return value_list.map((value) => {
-              return fill_in_template(possible_repeat.subtemplate, value)
+              return fill_in_template(possible_repeat.subtemplate, value);
             });
           } else {
             return [fill_in_template(list_item, values, placeholders)];

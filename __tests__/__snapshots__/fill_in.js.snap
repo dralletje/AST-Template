@@ -8,6 +8,12 @@ exports[`should fill in a function expression 1`] = `
 
 exports[`should fill in a simple template 1`] = `"let variable = \\"String\\";"`;
 
+exports[`should fill in a single entry into an object as expression 1`] = `
+"{
+  key: 10
+}"
+`;
+
 exports[`should fill in a template with a either 1`] = `"let variable = \\"String\\";"`;
 
 exports[`should fill in a template with a either 2`] = `"let variable = 10;"`;

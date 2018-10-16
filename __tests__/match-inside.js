@@ -1,4 +1,4 @@
-let { template, match_inside } = require('../astemplate.js');
+let { template, match_inside } = require('../ast-template.js');
 
 it('should match a react component', () => {
   let source = `

@@ -1,4 +1,4 @@
-# AS-Template
+# AST-Template
 
 ### TODO
 [ ] Even nicer error message

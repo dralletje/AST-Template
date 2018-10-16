@@ -1,4 +1,4 @@
-let { template } = require('../astemplate.js');
+let { template } = require('../ast-template.js');
 
 it('should match a stock file', () => {
   // let scope = {

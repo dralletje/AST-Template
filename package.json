@@ -1,5 +1,5 @@
 {
-  "name": "sequelize-parser",
+  "name": "ast-template",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -9,14 +9,13 @@
   },
   "author": "",
   "license": "ISC",
+  "main": "ast-template.js",
   "dependencies": {
     "@babel/parser": "^7.0.0-beta.56",
-    "@babel/plugin-syntax-jsx": "^7.0.0",
     "@babel/traverse": "^7.1.0",
     "@babel/types": "^7.1.2",
     "ast-types": "^0.11.5",
     "babel-generator": "^6.26.1",
-    "babylon": "^6.18.0",
     "chalk": "^2.4.1",
     "lodash": "^4.17.10"
   },
