@@ -1,4 +1,4 @@
-let { template, match_inside, fill_in_template } = require('./astemplate.js');
+let { template, match_inside, fill_in_template } = require('../ast-template.js');
 let fs = require('mz/fs');
 let Path = require('path');
 let chalk = require('chalk');

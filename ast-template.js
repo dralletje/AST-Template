@@ -723,7 +723,7 @@ let fill_in_template = (template, values, placeholders) => {
         throw err;
       } else {
         // TODO Check if the input matches the standalone template/type
-        return values.ast;
+        return values.ast || values;
       }
     }
   }
@@ -742,6 +742,7 @@ let fill_in_template = (template, values, placeholders) => {
           let possible_repeat = get_placeholder(list_item, placeholders);
           if (possible_repeat && possible_repeat.type === REPEAT_TYPE) {
             let value_list = values[possible_repeat.name];
+
             if (!Array.isArray(value_list)) {
               if (value_list.ast && value_list.ast.type === 'File') {
                 // Passed in template.statements`...`, need to get the individual statements
@@ -750,6 +751,7 @@ let fill_in_template = (template, values, placeholders) => {
                 throw new Error('value_list is not an array');
               }
             }
+
             return value_list.map((value) => {
               return fill_in_template(possible_repeat.subtemplate, value);
             });

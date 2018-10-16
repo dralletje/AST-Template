@@ -205,6 +205,26 @@ it.skip('should fill in a single entry into an object', () => {
   ).toMatchSnapshot();
 });
 
+it('should fill in statements', () => {
+  let definition_template = template.statements`
+    ${template.many(
+      'statements',
+      template.Statement
+    )}
+  `;
+
+  expect(
+    generate(
+      fill_in_template(definition_template, {
+        statements: template.statements`
+          console.log('#1');
+          console.log('#2');
+        `,
+      })
+    ).code
+  ).toMatchSnapshot();
+})
+
 it('should fill in object entries', () => {
   let definition_template = template.statements`
     let x = {

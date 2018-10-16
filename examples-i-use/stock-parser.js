@@ -1,4 +1,4 @@
-let { template, fill_in_template } = require('./astemplate.js');
+let { template, fill_in_template } = require('../ast-template.js');
 let fs = require('mz/fs');
 let Path = require('path');
 let chalk = require('chalk');
@@ -134,7 +134,10 @@ let show_stack = (error) => {
     let FILL_IN = {
       imports:
         "let { parse_xls_sync, parse_csv, parse_xlsx, parse_json } = require('./utils/parse.js');\n// let { retrieve_from_incoming } = require('./utils/retrieve.js');",
-      fetch: '',
+      fetch: dedent`
+        let response = await fetch('some-url');
+        let rows = await response.json();
+      `,
       functions: [
         { function_id: 'iterate.skip', config: { skip: 1 } },
         { function_id: 'iterate.first_is_headers' },
