@@ -743,6 +743,10 @@ let fill_in_template = (template, values, placeholders) => {
           if (possible_repeat && possible_repeat.type === REPEAT_TYPE) {
             let value_list = values[possible_repeat.name];
 
+            if (value_list == null) {
+              return [];
+            }
+
             if (!Array.isArray(value_list)) {
               if (value_list.ast && value_list.ast.type === 'File') {
                 // Passed in template.statements`...`, need to get the individual statements
