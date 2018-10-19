@@ -697,6 +697,10 @@ let fill_in_template = (template, values, placeholders) => {
     // console.log(`values:`, values)
     // console.log(`placeholders:`, placeholders)
     // console.log(`template:`, template)
+    if (value == null) {
+      throw new Error(`No value provided for placeholder '${placeholder.name}'`);
+    }
+
     return value.ast ||  value;
   }
 
@@ -744,7 +748,7 @@ let fill_in_template = (template, values, placeholders) => {
             let value_list = values[possible_repeat.name];
 
             if (value_list == null) {
-              return [];
+              value_list = [];
             }
 
             if (!Array.isArray(value_list)) {
@@ -754,6 +758,15 @@ let fill_in_template = (template, values, placeholders) => {
               } else {
                 throw new Error('value_list is not an array');
               }
+            }
+
+            if (possible_repeat.min > value_list.length) {
+              let mismatch = show_mismatch(`> ${possible_repeat.min}`, value_list.length);
+              throw new Error(`Placeholder '${possible_repeat.name}' got too few items ${mismatch}`);
+            }
+            if (value_list.length > possible_repeat.max) {
+              let mismatch = show_mismatch(`< ${possible_repeat.min}`, value_list.length);
+              throw new Error(`Placeholder '${possible_repeat.name}' got too many items ${mismatch}`);
             }
 
             return value_list.map((value) => {
@@ -978,6 +991,16 @@ let astemplate = {
       type: REPEAT_TYPE,
       name: name,
       min: 0,
+      max: Infinity,
+      subtemplate: subtemplate,
+    };
+  },
+
+  one_or_more: (name, subtemplate) => {
+    return {
+      type: REPEAT_TYPE,
+      name: name,
+      min: 1,
       max: Infinity,
       subtemplate: subtemplate,
     };
