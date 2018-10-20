@@ -701,7 +701,7 @@ let fill_in_template = (template, values, placeholders) => {
       throw new Error(`No value provided for placeholder '${placeholder.name}'`);
     }
 
-    return value.ast ||  value;
+    return ('ast' in value) ? value.ast : value;
   }
 
   if (placeholders == null) {
@@ -727,7 +727,7 @@ let fill_in_template = (template, values, placeholders) => {
         throw err;
       } else {
         // TODO Check if the input matches the standalone template/type
-        return values.ast || values;
+        return ('ast' in values) ? values.ast : values;
       }
     }
   }
