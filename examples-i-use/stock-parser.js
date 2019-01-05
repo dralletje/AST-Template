@@ -156,7 +156,7 @@ let show_stack = (error) => {
               { key: 'supplier_stockId', expression: "diamond['Packet No']" },
               { key: 'price', expression: "diamond['Net Value']" },
               { key: 'discount', expression: "diamond['Disc %']" },
-              { key: 'image', expression: '' },
+              { key: 'image', expression: 'null' },
               { key: 'v360', expression: 'null' },
               { key: 'brown', expression: 'null' },
               { key: 'green', expression: 'null' },
@@ -205,7 +205,12 @@ let show_stack = (error) => {
               // }),
               map_args: [template.expression`diamond`],
               map_statements: [],
-              map_results: [{ key: template.expression('key'), expression: template.expression`"value"`}],
+              map_results: fn.config.expressions.map(({ key, expression }) => {
+                return {
+                  key: template.expression(key),
+                  expression: template.expression(expression),
+                }
+              }),
             }
           }
           return null

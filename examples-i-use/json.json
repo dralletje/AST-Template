@@ -1,0 +1,70 @@
+{
+  "imports": "let {\n  flow\n} = require('lodash');\nlet {\n  parse_csv\n} = require('./utils/parse');\nlet {\n  retrieve_from_incoming\n} = require('./utils/retrieve');\nlet iterate = require('./utils/iterate');\nlet {\n  Exception\n} = require('../Exception');\nlet get_ec = diamond => {};",
+  "fetch": "let {\n  files\n} = await retrieve_from_incoming({\n  supplier_name: 'diacentre'\n});\n\nif (files.length !== 1) {\n  throw new Exception('Exactly one file should be provided!');\n}\n\nlet {\n  stream\n} = files[0];\nlet rows = parse_csv()(stream);\nreturn rows;",
+  "functions": [
+    {
+      "function_id": "iterate.first_is_headers"
+    },
+    {
+      "function_id": "iterate.map",
+      "config": {
+        "arg": "diamond",
+        "statements": "",
+        "expressions": [
+          {
+            "key": "certificate_number",
+            "expression": "diamond['Certificate #']"
+          },
+          {
+            "key": "carats",
+            "expression": "Number(diamond.Weight)"
+          },
+          {
+            "key": "supplier_name",
+            "expression": "\"diacentr\""
+          },
+          {
+            "key": "supplier_stockId",
+            "expression": "diamond['Stock #']"
+          },
+          {
+            "key": "price",
+            "expression": "Number(diamond['Cash Price'])"
+          },
+          {
+            "key": "discount",
+            "expression": "Number(diamond['Rapnet Discount %'])"
+          },
+          {
+            "key": "image",
+            "expression": "diamond['Diamond Image']"
+          },
+          {
+            "key": "v360",
+            "expression": "\"\""
+          },
+          {
+            "key": "brown",
+            "expression": "\"\""
+          },
+          {
+            "key": "green",
+            "expression": "\"\""
+          },
+          {
+            "key": "milky",
+            "expression": "diamond.Milky === 'NONE' ? 'No' : ''"
+          },
+          {
+            "key": "eyeclean",
+            "expression": "diamond.Eyeclean === 'YES' ? '100%' : '0%'"
+          },
+          {
+            "key": "availability",
+            "expression": "null"
+          }
+        ]
+      }
+    }
+  ]
+}

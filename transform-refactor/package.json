@@ -1,0 +1,30 @@
+{
+  "name": "transform-refactor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "transform-function-call.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ast-types": "^0.11.5",
+    "babel-core": "^6.26.3",
+    "dedent": "^0.7.0",
+    "glob": "^7.1.2",
+    "jest": "^23.4.2",
+    "jscodeshift": "^0.5.1",
+    "jscodeshift-imports": "^1.1.0",
+    "mz": "^2.7.0",
+    "recast": "^0.15.3"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "-setup.js"
+    ],
+    "transform": {},
+    "testEnvironment": "node"
+  }
+}
