@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should match a glamorous call with props 1`] = `Array []`;
+
+exports[`should match a static glamorous call 1`] = `
+Array [
+  Object {
+    "areas": Object {
+      "entries": Array [
+        Object {
+          "key": "backgroundColor",
+          "value": "\\"black\\"",
+        },
+        Object {
+          "key": "color",
+          "value": "\\"red\\"",
+        },
+        Object {
+          "key": "border",
+          "value": "has_border ? '2px solid black' : 'none'",
+        },
+      ],
+      "tag": "div",
+    },
+  },
+]
+`;
