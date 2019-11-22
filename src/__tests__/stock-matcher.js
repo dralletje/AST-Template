@@ -55,16 +55,16 @@ it('should match a stock file', () => {
       template.Statement,
     ]))}
 
-    let ${template.Identifier('fetch_fn')} = async (${template.arguments('arguments')}) => {
+    let ${template.Identifier('fetch_fn')} = async (${template.$arguments('arguments')}) => {
       ${template.many('fetch_functions', template.Statement)}
 
       return flow([
         ${template.many('flow_functions', template.either(null, [
           template.expression`
-            iterate.map(${template.function_expression('func')})
+            iterate.map(${template.$function_expression('func')})
           `,
           template.expression`
-            iterate.filter(${template.function_expression('func')})
+            iterate.filter(${template.$function_expression('func')})
           `,
           template.expression`
             iterate.${template.Identifier('iterate_fn')}(${template.many('inputs', template.Expression)})

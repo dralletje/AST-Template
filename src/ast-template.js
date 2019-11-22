@@ -332,7 +332,7 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
   if (is_placeholder(node_template)) {
     let {
       // map_fn allows for extra checks and simplification
-      map_fn = (x) => x,
+      map_fn = (x) => generate(x),
       type,
       name,
       get: placeholder_get,
@@ -372,11 +372,7 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
       throw new MismatchError(`Types not matching (${mismatch})`);
     }
 
-    let result = map_fn(match_filled_in, (template_sub, filled_sub) => {
-      // TODO I'm not entirely sure if this `placeholders` is the right one to pass on,
-      // .... it seems like this would not contain the "sub placeholders" that we actually care about
-      return match_ast(template_sub, filled_sub, placeholders);
-    });
+    let result = map_fn(match_filled_in);
 
     return {
       areas: {
@@ -488,6 +484,13 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
 };
 
 let match_ast = (template_ast, filled_ast, placeholders) => {
+  if (typeof compare_source === 'string') {
+    return match_ast(parse(template_ast, babeloptions), filled_ast, placeholders);
+  }
+  if (typeof filled_ast === 'string') {
+    return match_ast(template_ast, parse(filled_ast, babeloptions), placeholders);
+  }
+
   let { areas } = compare_node(
     template_ast.program || template_ast,
     filled_ast.program || filled_ast,
@@ -537,30 +540,7 @@ let expression = (text, ...nodes) => {
 
   return {
     placeholders: placeholders,
-    match: (compare_source) => {
-      let ast_filled_in =
-        typeof compare_source === 'string'
-          ? parseExpression(compare_source, babeloptions)
-          : compare_source;
-      return match_ast(template_ast, ast_filled_in, placeholders);
-    },
-    ast: template_ast,
-  };
-};
-
-let statements = (text, ...nodes) => {
-  let { placeholders, source } = generate_placeholders(text, nodes);
-  let template_ast = parse(source.trim(), babeloptions);
-
-  return {
-    placeholders: placeholders,
-    match: (compare_source) => {
-      let ast_filled_in =
-        typeof compare_source === 'string'
-          ? parse(compare_source, babeloptions)
-          : compare_source;
-      return match_ast(template_ast, ast_filled_in, placeholders);
-    },
+    match: (compare_source) => match_ast(template_ast, compare_source, placeholders),
     ast: template_ast,
   };
 };
@@ -692,7 +672,6 @@ let match_inside = (filled_in_source, template) => {
 
 let astemplate = {
   expression: expression,
-  statements: statements,
   entry: (...template_option) => unparsable`{ ${template_option} }`,
   jsxAttribute: (...template_option) => unparsable`<tag ${template_option} />`,
 
@@ -706,6 +685,16 @@ let astemplate = {
 
     return {
       placeholders: placeholders,
+      match: (compare_source) => match_ast(template_ast, compare_source, placeholders),
+      ast: template_ast,
+    };
+  },
+  statements: (text, ...nodes) => {
+    let { placeholders, source } = generate_placeholders(text, nodes);
+    let template_ast = parse(source.trim(), babeloptions);
+
+    return {
+      placeholders: placeholders,
       match: (compare_source) => {
         let ast_filled_in =
           typeof compare_source === 'string'
@@ -716,6 +705,7 @@ let astemplate = {
       ast: template_ast,
     };
   },
+  // statements: (...template_option) => unparsable`(() => { ${template_option} })`,
 
   either: (name, possibilities) => {
     return {
@@ -725,22 +715,22 @@ let astemplate = {
     };
   },
 
-  optional: (name, subtemplate) => {
-    return {
-      type: REPEAT_TYPE,
-      name: name,
-      min: 0,
-      max: 1,
-      subtemplate: subtemplate,
-    };
-  },
-
   repeat: (name, min, max, subtemplate) => {
     return {
       type: REPEAT_TYPE,
       name: name,
       min: min,
       max: max,
+      subtemplate: subtemplate,
+    };
+  },
+
+  optional: (name, subtemplate) => {
+    return {
+      type: REPEAT_TYPE,
+      name: name,
+      min: 0,
+      max: 1,
       subtemplate: subtemplate,
     };
   },
@@ -765,8 +755,16 @@ let astemplate = {
     };
   },
 
-  arguments: (name) => {
+  $arguments: (name) => {
     return astemplate.many(name, astemplate.Pattern);
+  },
+
+  // TODO Rename this to just "$function" ?
+  $function_expression: (name) => {
+    return astemplate.either(name, [
+      astemplate.FunctionExpression,
+      astemplate.ArrowFunctionExpression,
+    ]);
   },
 
   Expression: (name) => {
@@ -789,13 +787,6 @@ let astemplate = {
       name,
       map_fn: (x) => generate(x),
     };
-  },
-
-  function_expression: (name) => {
-    return astemplate.either(name, [
-      astemplate.FunctionExpression,
-      astemplate.ArrowFunctionExpression,
-    ]);
   },
 
   FunctionExpression: (name) => {
@@ -830,30 +821,6 @@ let astemplate = {
   },
   String: (name) => {
     return { type: t.StringLiteral, name, map_fn: (x) => x.value };
-  },
-  Object: (name, property_rules) => {
-    return {
-      type: t.ObjectExpression,
-      name,
-      map_fn: (object) => {
-        return {
-          entries: object.properties.map((property) => {
-            let key_match = match_subtemplate({
-              template: property_rules.key,
-              node: property.key,
-            });
-            let value_match = match_subtemplate({
-              template: property_rules.value,
-              node: property.value,
-            });
-            return {
-              key: key_match.areas,
-              value: value_match.areas,
-            };
-          }),
-        };
-      },
-    };
   },
 };
 

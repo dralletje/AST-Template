@@ -5,7 +5,7 @@ let prettier = require('prettier/standalone.js');
 let barserBabylon = require('prettier/parser-babylon.js');
 
 // let simple_arrow_function_template = template.expression`
-//   (${template.Identifier('arg')}, ${template.arguments('rest')}) => ${template.either('body', [
+//   (${template.Identifier('arg')}, ${template.$arguments('rest')}) => ${template.either('body', [
 //     template.statements`{
 //       ${template.many('statements', template.Statement)}
 //     }`,
@@ -29,7 +29,7 @@ let block_with_return = template.statements`
 `
 
 let simple_arrow_function_template = template.expression`
-  (${template.Identifier('arg')}, ${template.arguments('rest')}) => ${template.either('body', [
+  (${template.Identifier('arg')}, ${template.$arguments('rest')}) => ${template.either('body', [
     template.statements`{
       ${template.many('statements', template.Statement)}
     }`,
@@ -46,7 +46,7 @@ let stock_template = template.statements`
     ])
   )}
 
-  let ${template.Identifier('fetch_fn')} = async (${template.arguments(
+  let ${template.Identifier('fetch_fn')} = async (${template.$arguments(
   'arguments'
 )}) => {
     ${template.many('fetch_functions', template.Statement)}
@@ -77,7 +77,7 @@ let stock_template = template.statements`
             })
           `,
           template.expression`
-            iterate.filter(${template.function_expression('filter_fn')})
+            iterate.filter(${template.$function_expression('filter_fn')})
           `,
           template.expression`
             iterate.${template.Identifier('iterate_fn')}(${template.many(

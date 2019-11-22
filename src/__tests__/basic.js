@@ -81,10 +81,13 @@ it('should match a simple sequelize definition', () => {
     module.exports = (sequelize, DataTypes) => {
       const ${template.Identifier('model')} = sequelize.define(
         ${template.String('model_name')},
-        ${template.Object('model_definition', {
-          key: template.Identifier,
-          value: template.Expression,
-        })}
+        {
+          ${template.many('model_definition',
+            template.entry`
+              ${template.Identifier('key')}: ${template.Expression('value')}
+            `
+          )}
+        },
       );
 
       return ${template.Identifier('model')};
@@ -102,10 +105,13 @@ it('should match a definition with optionals', () => {
   `;
 
   let definition_template = template.statements`
-    let ${template.Identifier('var')} = ${template.Object('value', {
-      key: template.expression`${template.Identifier('property')}`,
-      value: template.expression`${template.String('type_description')}`,
-    })};
+    let ${template.Identifier('var')} = {
+      ${template.many('value',
+        template.entry`
+          ${template.Identifier('property')}: ${template.String('type_description')}
+        `
+      )}
+    };
 
     ${template.optional('optional_found', template.Expression)}
 
@@ -123,10 +129,13 @@ it('should match a definition with provided optionals', () => {
   `;
 
   let definition_template = template.statements`
-    let ${template.Identifier('var')} = ${template.Object('value', {
-      key: template.Identifier,
-      value: template.String,
-    })};
+    let ${template.Identifier('var')} = {
+      ${template.many('value',
+        template.entry`
+          ${template.Identifier('key')}: ${template.String('value')}
+        `
+      )}
+    }
 
     ${template.optional('optional_found', template.Statement)}
 
@@ -242,7 +251,7 @@ it('should not work if template does not suffice', () => {
   }).toThrow();
 });
 
-it.only('should match a repeated single key: value entry', () => {
+it('should match a repeated single key: value entry', () => {
   let simple_definition = `
     let result = {
       id: 'hey',

@@ -16,18 +16,12 @@ exports[`should match a definition with optionals 1`] = `
 Object {
   "areas": Object {
     "optional_found": Array [],
-    "value": Object {
-      "entries": Array [
-        Object {
-          "key": Object {
-            "property": "id",
-          },
-          "value": Object {
-            "type_description": "hey",
-          },
-        },
-      ],
-    },
+    "value": Array [
+      Object {
+        "property": "id",
+        "type_description": "hey",
+      },
+    ],
     "var": "result",
   },
 }
@@ -39,14 +33,12 @@ Object {
     "optional_found": Array [
       "result.name = 'Cool';",
     ],
-    "value": Object {
-      "entries": Array [
-        Object {
-          "key": "id",
-          "value": "hey",
-        },
-      ],
-    },
+    "value": Array [
+      Object {
+        "key": "id",
+        "value": "hey",
+      },
+    ],
     "var": "result",
   },
 }
@@ -98,48 +90,46 @@ exports[`should match a simple sequelize definition 1`] = `
 Object {
   "areas": Object {
     "model": "Price",
-    "model_definition": Object {
-      "entries": Array [
-        Object {
-          "key": "id",
-          "value": "{
+    "model_definition": Array [
+      Object {
+        "key": "id",
+        "value": "{
   type: DataTypes.UUID,
   primaryKey: true,
   defaultValue: DataTypes.UUIDV4,
   allowNull: false,
   autoIncrement: false
 }",
-        },
-        Object {
-          "key": "shape",
-          "value": "DataTypes.STRING",
-        },
-        Object {
-          "key": "color",
-          "value": "DataTypes.STRING",
-        },
-        Object {
-          "key": "clarity",
-          "value": "DataTypes.STRING",
-        },
-        Object {
-          "key": "lowSize",
-          "value": "DataTypes.DECIMAL",
-        },
-        Object {
-          "key": "highSize",
-          "value": "DataTypes.DECIMAL",
-        },
-        Object {
-          "key": "caratPrice",
-          "value": "DataTypes.DECIMAL",
-        },
-        Object {
-          "key": "date",
-          "value": "DataTypes.STRING",
-        },
-      ],
-    },
+      },
+      Object {
+        "key": "shape",
+        "value": "DataTypes.STRING",
+      },
+      Object {
+        "key": "color",
+        "value": "DataTypes.STRING",
+      },
+      Object {
+        "key": "clarity",
+        "value": "DataTypes.STRING",
+      },
+      Object {
+        "key": "lowSize",
+        "value": "DataTypes.DECIMAL",
+      },
+      Object {
+        "key": "highSize",
+        "value": "DataTypes.DECIMAL",
+      },
+      Object {
+        "key": "caratPrice",
+        "value": "DataTypes.DECIMAL",
+      },
+      Object {
+        "key": "date",
+        "value": "DataTypes.STRING",
+      },
+    ],
     "model_name": "Price",
   },
 }
