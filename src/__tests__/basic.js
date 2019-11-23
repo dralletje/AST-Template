@@ -1,4 +1,4 @@
-let { template } = require('../ast-template.js');
+let { template, match_precise } = require('../ast-template.js');
 let { minivaluate } = require('../minivaluate.js');
 
 it('should minivaluate some expression', () => {
@@ -94,7 +94,7 @@ it('should match a simple sequelize definition', () => {
     };
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 it('should match a definition with optionals', () => {
@@ -118,7 +118,7 @@ it('should match a definition with optionals', () => {
     module.exports = ${template.Identifier('var')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 it('should match a definition with provided optionals', () => {
@@ -142,7 +142,7 @@ it('should match a definition with provided optionals', () => {
     module.exports = ${template.Identifier('var')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 it('should match a single key: value entry', () => {
@@ -161,7 +161,7 @@ it('should match a single key: value entry', () => {
     module.exports = ${template.Identifier('var')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 
@@ -180,7 +180,7 @@ it('should match multiple expression', () => {
   module.exports = ${template.Identifier('var')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 it('should match function call with variable arguments', () => {
@@ -192,7 +192,7 @@ it('should match function call with variable arguments', () => {
     console.log(${template.many('arguments', template.Expression)});
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 it('should work with multiple repeats', () => {
@@ -214,8 +214,20 @@ it('should work with multiple repeats', () => {
     ${template.many('post', template.Statement)};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
+
+it.skip('should find expression statement as expression', () => {
+    let simple_definition = `
+      "use strict";
+    `;
+
+    let definition_template = template.statements`
+      ${template.String('strict')};
+    `;
+
+    expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
+})
 
 it('should not work if the repeats don\'t work', () => {
   let simple_definition = `
@@ -232,7 +244,7 @@ it('should not work if the repeats don\'t work', () => {
   `;
 
   expect(() => {
-    definition_template.match(simple_definition);
+    match_precise(definition_template, simple_definition);
   }).toThrow();
 });
 
@@ -247,7 +259,7 @@ it('should not work if template does not suffice', () => {
   `;
 
   expect(() => {
-    definition_template.match(simple_definition);
+    match_precise(definition_template, simple_definition);
   }).toThrow();
 });
 
@@ -270,7 +282,7 @@ it('should match a repeated single key: value entry', () => {
   `;
 
   try {
-    expect(definition_template.match(simple_definition)).toMatchSnapshot();
+    expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
   } catch (err) {
     // console.log(`err.errors:`, JSON.stringify(err.path, null, 2));
     console.log(`err:`, JSON.stringify(err, null, 2))
@@ -298,7 +310,7 @@ it('should match objects in any order', () => {
     module.exports = ${template.Identifier('var')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 it('should match a mix between defined and rest entries', () => {
@@ -326,7 +338,7 @@ it('should match a mix between defined and rest entries', () => {
     module.exports = ${template.Identifier('var')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
 
 it('should not match shorthand object entries to real object entries', () => {
@@ -347,7 +359,7 @@ it('should not match shorthand object entries to real object entries', () => {
   `;
 
   expect(() => {
-    definition_template.match(simple_definition)
+    match_precise(definition_template, simple_definition)
   }).toThrow();
 });
 
@@ -363,5 +375,5 @@ it('should be greedy', () => {
     ${template.optional('post_expression', template.Statement)}
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });

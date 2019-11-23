@@ -10,7 +10,7 @@ let {
   get,
 } = require('lodash');
 
-let { is_placeholder, get_placeholder, EITHER_TYPE, remove_keys, REPEAT_TYPE } = require('./types.js');
+let { is_placeholder, get_placeholder, TemplatePrimitives, remove_keys } = require('./types.js');
 let { show_mismatch } = require('./debug.js');
 let { fill_in_template } = require('./fill_in_template.js');
 
@@ -56,27 +56,28 @@ class MismatchError extends Error {
   }
 }
 
-let match_subtemplate = ({ template: _template, node }) => {
-  if (typeof _template === 'function') {
-    let x = astemplate.expression`${_template('basic')}`.match(node);
-    return {
-      areas: x.areas.basic,
-    };
-  } else {
-    if (typeof _template.match === 'function') {
-      return _template.match(node);
-    } else {
-      let t = {
-        ..._template,
-        name: 'basic',
-      };
-      let x = astemplate.expression`${t}`.match(node);
-      return {
-        areas: x.areas.basic,
-      };
-    }
-  }
-};
+let match_subtemplate = ({ template: _template, node }) => match_primitive(_template, node);
+// let match_subtemplate = ({ template: _template, node }) => {
+//   if (typeof _template === 'function') {
+//     let x = astemplate.expression`${_template('basic')}`.match(node);
+//     return {
+//       areas: x.areas.basic,
+//     };
+//   } else {
+//     if (typeof _template.match === 'function') {
+//       return _template.match(node);
+//     } else {
+//       let t = {
+//         ..._template,
+//         name: 'basic',
+//       };
+//       let x = astemplate.expression`${t}`.match(node);
+//       return {
+//         areas: x.areas.basic,
+//       };
+//     }
+//   }
+// };
 
 // TODO Immutable?
 // TODO Add the key, template and filled_in to the actual stack?
@@ -152,7 +153,7 @@ let match_array = ({ template_array, subject_array, placeholders }) => {
     // Check if the current template element is a repeat placeholder
     if (
       is_placeholder(template_element) &&
-      get_placeholder(template_element, placeholders).type === REPEAT_TYPE
+      get_placeholder(template_element, placeholders).type === TemplatePrimitives.REPEAT_TYPE
     ) {
       // If it is a repeat placeholder we need to
       let repeat = get_placeholder(template_element, placeholders);
@@ -263,10 +264,10 @@ let match_unordered_array = ({
       try {
         if (
           is_placeholder(template_element) &&
-          get_placeholder(template_element, placeholders).type === REPEAT_TYPE
+          get_placeholder(template_element, placeholders).type === TemplatePrimitives.REPEAT_TYPE
         ) {
           let repeat = get_placeholder(template_element, placeholders);
-          let result = repeat.subtemplate.match(subject_element);
+          let result = match_primitive(repeat.subtemplate, subject_element);
 
           areas[repeat.name] = areas[repeat.name] || [];
           if (!Array.isArray(areas[repeat.name])) {
@@ -328,7 +329,7 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
   //   throw new MismatchError('Damnit')
   // }
 
-  // If the node we look at is a placeholder, we need to store the value we are currently at
+  // If the node is a placeholder, we need to store the value we are currently at
   if (is_placeholder(node_template)) {
     let {
       // map_fn allows for extra checks and simplification
@@ -339,11 +340,11 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
       ...placeholder_props
     } = get_placeholder(node_template, placeholders);
 
-    if (type === REPEAT_TYPE) {
+    if (type === TemplatePrimitives.REPEAT_TYPE) {
       throw new MismatchError(`Repeat used in a non-array place`);
     }
 
-    if (type === EITHER_TYPE) {
+    if (type === TemplatePrimitives.EITHER_TYPE) {
       let { possibilities } = placeholder_props;
 
       let errors = [];
@@ -492,14 +493,14 @@ let match_ast = (template_ast, filled_ast, placeholders) => {
   }
 
   let { areas } = compare_node(
-    template_ast.program || template_ast,
-    filled_ast.program || filled_ast,
+    template_ast,
+    filled_ast,
     placeholders
   );
 
   for (let [key, placeholder] of Object.entries(placeholders)) {
     let node = areas[placeholder.name];
-    if (node == null && placeholder.type !== REPEAT_TYPE) {
+    if (node == null && placeholder.type !== TemplatePrimitives.REPEAT_TYPE) {
       throw new MismatchError(`Unmatched placeholder '${placeholder.name}'`);
     }
   }
@@ -534,17 +535,6 @@ let generate_placeholders = (text, nodes) => {
   return { placeholders, source };
 };
 
-let expression = (text, ...nodes) => {
-  let { placeholders, source } = generate_placeholders(text, nodes);
-  let template_ast = parseExpression(source, babeloptions);
-
-  return {
-    placeholders: placeholders,
-    match: (compare_source) => match_ast(template_ast, compare_source, placeholders),
-    ast: template_ast,
-  };
-};
-
 let get_path_parents = function*(path) {
   let current_path = path;
   while (current_path != null) {
@@ -558,13 +548,50 @@ let get_nodepath_fullpath = (path) => {
 
   for (let current_path of get_path_parents(path)) {
     fullpath = [
-      ...[current_path.listKey, current_path.key].filter((x) => x != null),
+      current_path.listKey,
+      // listKey is only present when path is inside an array,
+      // eg body[2] inside a BlockStatement node (listKey = body, key = 0)
+      // or arguments[1] inside a FunctionExpression node (listKey = arguments, key = 1)
+
+      current_path.key,
       ...fullpath,
     ];
   }
 
-  return fullpath;
+  return fullpath.filter((x) => x != null);
 };
+
+let match_primitive = (primitive, node) => {
+  if (primitive.type === TemplatePrimitives.EITHER_TYPE) {
+
+  }
+  if (primitive.type === TemplatePrimitives.TEMPLATE) {
+    return match_ast(primitive.ast, node, primitive.placeholders)
+  }
+  if (typeof primitive === 'function') {
+    let x = match_primitive(astemplate.expression`${primitive('basic')}`, node);
+    return {
+      areas: x.areas.basic,
+    };
+  } else {
+    if (typeof primitive.match === 'function') {
+      return primitive.match(node);
+    } else {
+      let t = {
+        ...primitive,
+        name: 'basic',
+      };
+      let x = match_primitive(astemplate.expression`${t}`, node);
+      return {
+        areas: x.areas.basic,
+      };
+    }
+  }
+
+  // if (typeof primitive.match === 'function') {
+  //   return primitive.match(source)
+  // } else {
+}
 
 let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
   if (rest.length !== 0) {
@@ -592,12 +619,7 @@ let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
     noScope: true,
     enter(path) {
       if (is_placeholder(path.node)) {
-        let { wrap } = get_placeholder(
-          path.node,
-          placeholder_i_guess.placeholders
-        );
         placeholder_info = {
-          wrap: wrap,
           path: get_nodepath_fullpath(path),
         };
         path.shouldSkip = true;
@@ -608,14 +630,16 @@ let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
   // 1. Find path to the subnode
   // 2. Replace that placeholder inside the `placeholder_i_guess` with the node found on that path
 
-  let x = expression(text, ...nodes);
+  let x = astemplate.expression(text, ...nodes);
   return {
+    type: TemplatePrimitives.UNPARSABLE,
     match: (match_source) => {
       if (typeof match_source === 'string') {
         throw new Error('Impossible...');
       }
 
-      return x.match(
+      return match_primitive(
+        x,
         fill_in_template(placeholder_i_guess, {
           x: match_source,
         })
@@ -639,7 +663,7 @@ let match_inside = (filled_in_source, template) => {
   if (FAST) {
     traverse.default.cheap(ast_filled_in, (node) => {
       try {
-        let x = template.match(node);
+        let x = match_primitive(template, node);
         matches.push(x);
 
         if (RECURSE === false) {
@@ -655,7 +679,7 @@ let match_inside = (filled_in_source, template) => {
     traverse.default(ast_filled_in, {
       enter(path) {
         try {
-          let x = template.match(path.node);
+          let x = match_primitive(template, path.node);
           matches.push(x);
 
           if (RECURSE === false) {
@@ -671,10 +695,16 @@ let match_inside = (filled_in_source, template) => {
 };
 
 let astemplate = {
-  expression: expression,
-  entry: (...template_option) => unparsable`{ ${template_option} }`,
-  jsxAttribute: (...template_option) => unparsable`<tag ${template_option} />`,
+  expression: (text, ...nodes) => {
+    let { placeholders, source } = generate_placeholders(text, nodes);
+    let template_ast = parseExpression(source, babeloptions);
 
+    return {
+      type: TemplatePrimitives.TEMPLATE,
+      placeholders: placeholders,
+      ast: template_ast,
+    };
+  },
   statement: (text, ...nodes) => {
     let { placeholders, source } = generate_placeholders(text, nodes);
     let template_ast_full = parse(source, babeloptions);
@@ -684,32 +714,29 @@ let astemplate = {
     let template_ast = template_ast_full.program.body[0];
 
     return {
+      type: TemplatePrimitives.TEMPLATE,
       placeholders: placeholders,
-      match: (compare_source) => match_ast(template_ast, compare_source, placeholders),
       ast: template_ast,
     };
   },
   statements: (text, ...nodes) => {
     let { placeholders, source } = generate_placeholders(text, nodes);
-    let template_ast = parse(source.trim(), babeloptions);
+    let template_ast = parse(source, babeloptions);
 
     return {
+      type: TemplatePrimitives.TEMPLATE,
       placeholders: placeholders,
-      match: (compare_source) => {
-        let ast_filled_in =
-          typeof compare_source === 'string'
-            ? parse(compare_source, babeloptions)
-            : compare_source;
-        return match_ast(template_ast, ast_filled_in, placeholders);
-      },
       ast: template_ast,
     };
   },
   // statements: (...template_option) => unparsable`(() => { ${template_option} })`,
 
+  entry: (...template_option) => unparsable`{ ${template_option} }`,
+  jsxAttribute: (...template_option) => unparsable`<tag ${template_option} />`,
+
   either: (name, possibilities) => {
     return {
-      type: EITHER_TYPE,
+      type: TemplatePrimitives.EITHER_TYPE,
       name: name,
       possibilities: possibilities,
     };
@@ -717,7 +744,7 @@ let astemplate = {
 
   repeat: (name, min, max, subtemplate) => {
     return {
-      type: REPEAT_TYPE,
+      type: TemplatePrimitives.REPEAT_TYPE,
       name: name,
       min: min,
       max: max,
@@ -726,33 +753,15 @@ let astemplate = {
   },
 
   optional: (name, subtemplate) => {
-    return {
-      type: REPEAT_TYPE,
-      name: name,
-      min: 0,
-      max: 1,
-      subtemplate: subtemplate,
-    };
+    return astemplate.repeat(name, 0, 1, subtemplate);
   },
 
   many: (name, subtemplate) => {
-    return {
-      type: REPEAT_TYPE,
-      name: name,
-      min: 0,
-      max: Infinity,
-      subtemplate: subtemplate,
-    };
+    return astemplate.repeat(name, 0, Infinity, subtemplate);
   },
 
   one_or_more: (name, subtemplate) => {
-    return {
-      type: REPEAT_TYPE,
-      name: name,
-      min: 1,
-      max: Infinity,
-      subtemplate: subtemplate,
-    };
+    return astemplate.repeat(name, 1, Infinity, subtemplate);
   },
 
   $arguments: (name) => {
@@ -828,6 +837,9 @@ module.exports = {
   template: astemplate,
   astemplate,
   match_inside,
+  match_precise: (primitive, subject) => {
+    return match_ast(primitive.ast, subject, primitive.placeholders)
+  },
   fill_in_template,
   unparsable,
 };

@@ -35,18 +35,18 @@ let container_nodes = {
 let get_contained_node = (node) => {
   let container_type = container_nodes[node.type];
   if (container_type) {
-    let value = container_type.get(node);
-    if (value) {
-      return {
-        ...value,
-        astemplate_wrap: container_type.wrap,
-        astemplate_get: container_type.get,
-      };
-    } else {
-      return node;
-    }
+    let value = container_type.get(node) || node;
+    return {
+      ...value,
+      astemplate_wrap: container_type.wrap || ((x) => x),
+      astemplate_get: container_type.get || ((x) => x),
+    };
   } else {
-    return node;
+    return {
+      ...node,
+      astemplate_wrap: ((x) => x),
+      astemplate_get: ((x) => x),
+    };
   }
 };
 
@@ -67,17 +67,14 @@ let get_placeholder = (node_template, placeholders) => {
     let placeholder_id = placeholder_node.name;
     let placeholder_description = placeholders[placeholder_id];
     return {
-      wrap: placeholder_node.astemplate_wrap || ((x) => x),
-      get: placeholder_node.astemplate_get || ((x) => x),
+      wrap: placeholder_node.astemplate_wrap,
+      get: placeholder_node.astemplate_get,
       ...placeholder_description,
     };
   } else {
     return null;
   }
 };
-
-let REPEAT_TYPE = Symbol('Repeat a part a certain number of times');
-let EITHER_TYPE = Symbol('Matches one of multiple subtemplates');
 
 let remove_keys = (object) => {
   let unnecessary_keys = [
@@ -94,4 +91,13 @@ let remove_keys = (object) => {
   return omit(object, unnecessary_keys);
 };
 
-module.exports = { is_placeholder, get_placeholder, REPEAT_TYPE, EITHER_TYPE, remove_keys }
+let TemplatePrimitives = {
+  REPEAT_TYPE: Symbol('Repeat a part a certain number of times'),
+  EITHER_TYPE: Symbol('Matches one of multiple subtemplates'),
+  STATEMENTS: Symbol('Collection of statements'),
+  STATEMENT: Symbol('One single statement'),
+  EXPRESSION: Symbol('One single expression'),
+  TEMPLATE: Symbol('an template containing ast and placeholder info'),
+}
+
+module.exports = { is_placeholder, get_placeholder, REPEAT_TYPE: TemplatePrimitives.REPEAT_TYPE, EITHER_TYPE: TemplatePrimitives.EITHER_TYPE, remove_keys, TemplatePrimitives }

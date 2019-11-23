@@ -1,4 +1,4 @@
-let { template } = require('../ast-template.js');
+let { template, match_precise } = require('../ast-template.js');
 
 it('should match a stock file', () => {
   // let scope = {
@@ -79,5 +79,5 @@ it('should match a stock file', () => {
     module.exports = ${template.Expression('export')};
   `;
 
-  expect(definition_template.match(simple_definition)).toMatchSnapshot();
+  expect(match_precise(definition_template, simple_definition)).toMatchSnapshot();
 });
