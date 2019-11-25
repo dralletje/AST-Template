@@ -2,15 +2,14 @@ let generate_unsafe = require('babel-generator').default;
 let { parse, parseExpression } = require('@babel/parser');
 let traverse = require('@babel/traverse');
 let { namedTypes: t } = require('ast-types');
-let {
-  zip,
-  isEqual,
-  isObject,
-  range,
-  get,
-} = require('lodash');
+let { zip, isEqual, isObject, range, get } = require('lodash');
 
-let { is_placeholder, get_placeholder, TemplatePrimitives, remove_keys } = require('./types.js');
+let {
+  is_placeholder,
+  get_placeholder,
+  TemplatePrimitives,
+  remove_keys,
+} = require('./types.js');
 let { show_mismatch } = require('./debug.js');
 let { fill_in_template } = require('./fill_in_template.js');
 
@@ -47,7 +46,6 @@ let babeloptions = {
   plugins: ['jsx', 'asyncGenerators', 'dynamicImport', 'classProperties'],
 };
 
-
 class MismatchError extends Error {
   constructor(message) {
     super(message);
@@ -56,7 +54,8 @@ class MismatchError extends Error {
   }
 }
 
-let match_subtemplate = ({ template: _template, node }) => match_primitive(_template, node);
+let match_subtemplate = ({ template: _template, node }) =>
+  match_primitive(_template, node);
 // let match_subtemplate = ({ template: _template, node }) => {
 //   if (typeof _template === 'function') {
 //     let x = astemplate.expression`${_template('basic')}`.match(node);
@@ -131,7 +130,7 @@ let match_repeat_to_array = ({ repeat_placeholder, subject_array }) => {
   if (matched.length < min) {
     let mismatch = show_mismatch(min, matched.length, '<');
     throw new MismatchError(
-      `Repeat matches less nodes than required (${mismatch})`
+      `Repeat matches less nodes than required (${mismatch})`,
     );
   }
 
@@ -145,7 +144,7 @@ let match_array = ({ template_array, subject_array, placeholders }) => {
   let areas = {};
   let subject_index = -1;
   for (let [template_index, template_element] of Object.entries(
-    template_array
+    template_array,
   )) {
     subject_index = subject_index + 1;
 
@@ -153,7 +152,8 @@ let match_array = ({ template_array, subject_array, placeholders }) => {
     // Check if the current template element is a repeat placeholder
     if (
       is_placeholder(template_element) &&
-      get_placeholder(template_element, placeholders).type === TemplatePrimitives.REPEAT_TYPE
+      get_placeholder(template_element, placeholders).type ===
+        TemplatePrimitives.REPEAT_TYPE
     ) {
       // If it is a repeat placeholder we need to
       let repeat = get_placeholder(template_element, placeholders);
@@ -264,16 +264,15 @@ let match_unordered_array = ({
       try {
         if (
           is_placeholder(template_element) &&
-          get_placeholder(template_element, placeholders).type === TemplatePrimitives.REPEAT_TYPE
+          get_placeholder(template_element, placeholders).type ===
+            TemplatePrimitives.REPEAT_TYPE
         ) {
           let repeat = get_placeholder(template_element, placeholders);
           let result = match_primitive(repeat.subtemplate, subject_element);
 
           areas[repeat.name] = areas[repeat.name] || [];
           if (!Array.isArray(areas[repeat.name])) {
-            throw new Error(
-              `Repeat '${repeat}' also has an non-array value..`
-            );
+            throw new Error(`Repeat '${repeat}' also has an non-array value..`);
           }
 
           areas[repeat.name].push(result.areas);
@@ -282,7 +281,7 @@ let match_unordered_array = ({
           let result = compare_node(
             template_element,
             subject_element,
-            placeholders
+            placeholders,
           );
 
           // TODO Check for already existing values on the same keys
@@ -306,90 +305,7 @@ let match_unordered_array = ({
   return { areas };
 };
 
-let compare_node = (_node_template, _node_filled_in, placeholders) => {
-  // First case is easy, this is to compare primitives.
-  // If they match, nice
-  // If they don't, we have a mismatch
-  if (!isObject(_node_template) || !isObject(_node_filled_in)) {
-    if (_node_template === _node_filled_in) {
-      return { areas: {} };
-    } else {
-      let mismatch = show_mismatch(_node_template, _node_filled_in);
-      throw new MismatchError(`Primitives not equal (${mismatch})`);
-    }
-  }
-
-  // We strip all the bloat (like line numers and locations) from the nodes,
-  // because these will never be equal (or mostly never, we don't care about them anyway)
-  let node_template = remove_keys(_node_template);
-  let node_filled_in = remove_keys(_node_filled_in);
-
-  // if (node_filled_in.properties && node_filled_in.properties[0] == null) {
-  //   console.trace('Damnit')
-  //   throw new MismatchError('Damnit')
-  // }
-
-  // If the node is a placeholder, we need to store the value we are currently at
-  if (is_placeholder(node_template)) {
-    let {
-      // map_fn allows for extra checks and simplification
-      map_fn = (x) => generate(x),
-      type,
-      name,
-      get: placeholder_get,
-      ...placeholder_props
-    } = get_placeholder(node_template, placeholders);
-
-    if (type === TemplatePrimitives.REPEAT_TYPE) {
-      throw new MismatchError(`Repeat used in a non-array place`);
-    }
-
-    if (type === TemplatePrimitives.EITHER_TYPE) {
-      let { possibilities } = placeholder_props;
-
-      let errors = [];
-      for (let possibility of possibilities) {
-        try {
-          let result = match_subtemplate({
-            template: possibility,
-            node: _node_filled_in,
-          });
-          return { areas: { [name]: result.areas } };
-        } catch (err) {
-          // Do something with error
-          errors.push(err);
-          continue;
-        }
-      }
-      let err = new MismatchError(`None of the possibilities matched`);
-      err.sub_errors = errors;
-      throw err;
-    }
-
-    let match_filled_in = placeholder_get(node_filled_in);
-
-    if (!type.check(match_filled_in)) {
-      let mismatch = show_mismatch(type, node_filled_in.type);
-      throw new MismatchError(`Types not matching (${mismatch})`);
-    }
-
-    let result = map_fn(match_filled_in);
-
-    return {
-      areas: {
-        [name]: result,
-      },
-    };
-  }
-
-  if (node_template.type == null) {
-    if (isEqual(node_template, node_filled_in)) {
-      return { areas: {} };
-    } else {
-      throw new MismatchError(`'node_template' has type null?`);
-    }
-  }
-
+let match_node = (node_template, node_filled_in, placeholders) => {
   // Same thing about the types, if those don't match we are done
   if (node_template.type !== node_filled_in.type) {
     let mismatch = show_mismatch(node_template.type, node_filled_in.type);
@@ -401,7 +317,7 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
   if (!isEqual(Object.keys(node_template), Object.keys(node_filled_in))) {
     let mismatch = show_mismatch(
       Object.keys(node_template),
-      Object.keys(node_filled_in)
+      Object.keys(node_filled_in),
     );
     throw new MismatchError(`Different keys (${mismatch})`);
   }
@@ -459,7 +375,7 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
         let result = compare_node(
           template_value,
           filled_in_value,
-          placeholders
+          placeholders,
         );
 
         // TODO Warn if there are multiple areas in result?
@@ -484,19 +400,54 @@ let compare_node = (_node_template, _node_filled_in, placeholders) => {
   };
 };
 
-let match_ast = (template_ast, filled_ast, placeholders) => {
-  if (typeof compare_source === 'string') {
-    return match_ast(parse(template_ast, babeloptions), filled_ast, placeholders);
-  }
-  if (typeof filled_ast === 'string') {
-    return match_ast(template_ast, parse(filled_ast, babeloptions), placeholders);
+let is_node = (possibly_node) => {};
+
+let compare_node = (_node_template, _node_filled_in, placeholders) => {
+  // Compare primitives.
+  // If they match, nice
+  // If they don't, we have a mismatch
+  if (!isObject(_node_template) || !isObject(_node_filled_in)) {
+    if (_node_template === _node_filled_in) {
+      return { areas: {} };
+    } else {
+      let mismatch = show_mismatch(_node_template, _node_filled_in);
+      throw new MismatchError(`Primitives not equal (${mismatch})`);
+    }
   }
 
-  let { areas } = compare_node(
-    template_ast,
-    filled_ast,
-    placeholders
-  );
+  // We strip all the bloat (like line numers and locations) from the nodes,
+  // because these will never be equal (or mostly never, we don't care about them anyway)
+  let node_template = remove_keys(_node_template);
+  let node_filled_in = remove_keys(_node_filled_in);
+
+  // It's a "plain" object, and not a node
+  if (node_template.type == null) {
+    if (isEqual(node_template, node_filled_in)) {
+      return { areas: {} };
+    } else {
+      throw new MismatchError(`'node_template' has type null?`);
+    }
+  }
+
+  // If the node is a placeholder, we need to store the value we are currently at
+  if (is_placeholder(node_template)) {
+    let placeholder = get_placeholder(node_template, placeholders);
+    return match_primitive(placeholder, node_filled_in);
+  } else {
+    return match_node(node_template, node_filled_in, placeholders);
+  }
+};
+
+let match_ast = (template_ast, filled_ast, placeholders) => {
+  if (typeof filled_ast === 'string') {
+    return match_ast(
+      template_ast,
+      parse(filled_ast, babeloptions),
+      placeholders,
+    );
+  }
+
+  let { areas } = compare_node(template_ast, filled_ast, placeholders);
 
   for (let [key, placeholder] of Object.entries(placeholders)) {
     let node = areas[placeholder.name];
@@ -562,12 +513,69 @@ let get_nodepath_fullpath = (path) => {
 };
 
 let match_primitive = (primitive, node) => {
-  if (primitive.type === TemplatePrimitives.EITHER_TYPE) {
+  if (primitive.type === TemplatePrimitives.REPEAT_TYPE) {
+    throw new MismatchError(`Repeat used in a non-array place`);
+  }
 
+  if (primitive.type === TemplatePrimitives.EITHER_TYPE) {
+    let { possibilities } = primitive;
+
+    let errors = [];
+    for (let possibility of possibilities) {
+      try {
+        let result = match_subtemplate({
+          template: possibility,
+          node: node,
+        });
+
+        if (primitive.name) {
+          return { areas: { [primitive.name]: result.areas } };
+        } else {
+          return { areas: result.areas };
+        }
+      } catch (err) {
+        // Do something with error
+        errors.push(err);
+        continue;
+      }
+    }
+    let err = new MismatchError(`None of the possibilities matched`);
+    err.sub_errors = errors;
+    throw err;
+  }
+
+  if (primitive.type === TemplatePrimitives.NODE) {
+    let match_filled_in = primitive.get(node);
+
+    if (!primitive.node_type.check(match_filled_in)) {
+      let mismatch = show_mismatch(primitive.node_type, node.type);
+      throw new MismatchError(`Types not matching (${mismatch})`);
+    }
+
+    let result = (primitive.map_fn || ((x) => generate(x)))(match_filled_in);
+    return {
+      areas: {
+        [primitive.name]: result,
+      },
+    };
   }
   if (primitive.type === TemplatePrimitives.TEMPLATE) {
-    return match_ast(primitive.ast, node, primitive.placeholders)
+    return match_ast(primitive.ast, node, primitive.placeholders);
   }
+
+  if (primitive.type === TemplatePrimitives.UNPARSABLE) {
+    if (typeof match_source === 'string') {
+      throw new Error('Impossible...');
+    }
+
+    return match_primitive(
+      primitive.x,
+      fill_in_template(primitive.template, {
+        x: node,
+      }),
+    );
+  }
+
   if (typeof primitive === 'function') {
     let x = match_primitive(astemplate.expression`${primitive('basic')}`, node);
     return {
@@ -575,6 +583,8 @@ let match_primitive = (primitive, node) => {
     };
   } else {
     if (typeof primitive.match === 'function') {
+      console.log(`node:`, node);
+      console.log(`primitive:`, primitive);
       return primitive.match(node);
     } else {
       let t = {
@@ -591,7 +601,7 @@ let match_primitive = (primitive, node) => {
   // if (typeof primitive.match === 'function') {
   //   return primitive.match(source)
   // } else {
-}
+};
 
 let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
   if (rest.length !== 0) {
@@ -610,12 +620,12 @@ let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
     ];
   }
 
-  let placeholder_i_guess = astemplate.expression`${prefix}${astemplate.Expression(
-    'x'
+  let template = astemplate.expression`${prefix}${astemplate.Expression(
+    'x',
   )}${suffix}`;
 
   let placeholder_info = null;
-  traverse.default(placeholder_i_guess.ast, {
+  traverse.default(template.ast, {
     noScope: true,
     enter(path) {
       if (is_placeholder(path.node)) {
@@ -633,19 +643,9 @@ let unparsable = ([prefix, suffix], unparsable_node, ...rest) => {
   let x = astemplate.expression(text, ...nodes);
   return {
     type: TemplatePrimitives.UNPARSABLE,
-    match: (match_source) => {
-      if (typeof match_source === 'string') {
-        throw new Error('Impossible...');
-      }
-
-      return match_primitive(
-        x,
-        fill_in_template(placeholder_i_guess, {
-          x: match_source,
-        })
-      );
-    },
+    x: x,
     placeholders: x.placeholders,
+    template: template,
     ast: get(x.ast, placeholder_info.path),
   };
 };
@@ -778,21 +778,24 @@ let astemplate = {
 
   Expression: (name) => {
     return {
-      type: t.Expression,
+      type: TemplatePrimitives.NODE,
+      node_type: t.Expression,
       name,
       map_fn: (x) => generate(x),
     };
   },
   Statement: (name) => {
     return {
-      type: t.Statement,
+      type: TemplatePrimitives.NODE,
+      node_type: t.Statement,
       name,
       map_fn: (x) => generate(x),
     };
   },
   Pattern: (name) => {
     return {
-      type: t.Pattern,
+      type: TemplatePrimitives.NODE,
+      node_type: t.Pattern,
       name,
       map_fn: (x) => generate(x),
     };
@@ -800,21 +803,24 @@ let astemplate = {
 
   FunctionExpression: (name) => {
     return {
-      type: t.FunctionExpression,
+      type: TemplatePrimitives.NODE,
+      node_type: t.FunctionExpression,
       name,
       map_fn: (x) => generate(x),
     };
   },
   ArrowFunctionExpression: (name) => {
     return {
-      type: t.ArrowFunctionExpression,
+      type: TemplatePrimitives.NODE,
+      node_type: t.ArrowFunctionExpression,
       name,
       map_fn: (x) => generate(x),
     };
   },
   Identifier: (name) => {
     return {
-      type: t.Identifier,
+      type: TemplatePrimitives.NODE,
+      node_type: t.Identifier,
       title: 'Identifier',
       name,
       map_fn: (x) => x.name,
@@ -822,14 +828,20 @@ let astemplate = {
   },
   JSXIdentifier: (name) => {
     return {
-      type: t.JSXIdentifier,
+      type: TemplatePrimitives.NODE,
+      node_type: t.JSXIdentifier,
       title: 'JSXIdentifier',
       name,
       map_fn: (x) => x.name,
     };
   },
   String: (name) => {
-    return { type: t.StringLiteral, name, map_fn: (x) => x.value };
+    return {
+      type: TemplatePrimitives.NODE,
+      node_type: t.StringLiteral,
+      name,
+      map_fn: (x) => x.value,
+    };
   },
 };
 
@@ -838,7 +850,7 @@ module.exports = {
   astemplate,
   match_inside,
   match_precise: (primitive, subject) => {
-    return match_ast(primitive.ast, subject, primitive.placeholders)
+    return match_ast(primitive.ast, subject, primitive.placeholders);
   },
   fill_in_template,
   unparsable,

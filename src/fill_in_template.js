@@ -5,7 +5,7 @@ let {
   mapValues,
 } = require('lodash');
 
-let { is_placeholder, get_placeholder, EITHER_TYPE, remove_keys, REPEAT_TYPE } = require('./types.js');
+let { is_placeholder, get_placeholder, remove_keys, TemplatePrimitives } = require('./types.js');
 let { show_mismatch } = require('./debug.js');
 
 let fill_in_template = (template, values, placeholders) => {
@@ -16,11 +16,17 @@ let fill_in_template = (template, values, placeholders) => {
     return template;
   }
 
+
+  if (values && 'ast' in values) {
+    console.log(values);
+    return fill_in_template(values.ast);
+  }
+
   if (is_placeholder(template)) {
     let placeholder = get_placeholder(template, placeholders);
     let value = values[placeholder.name];
 
-    if (placeholder.type === EITHER_TYPE) {
+    if (placeholder.type === TemplatePrimitives.EITHER_TYPE) {
       let errors = [];
       for (let possibility of placeholder.possibilities) {
         try {
@@ -48,36 +54,35 @@ let fill_in_template = (template, values, placeholders) => {
     return ('ast' in value) ? value.ast : value;
   }
 
+  if (template.type === TemplatePrimitives.EITHER_TYPE) {
+    let errors = [];
+    for (let possibility of template.possibilities) {
+      try {
+        return fill_in_template(possibility, values);
+      } catch (err) {
+        errors.push(err);
+        continue;
+      }
+    }
+
+    let err = new Error(`Didn't match any subtemplate`);
+    err.errors = errors;
+    throw err;
+  }
+
   if (placeholders == null) {
     if (t.Node.check(template)) {
       return template;
     } else if (template.ast) {
       return fill_in_template(template.ast, values, template.placeholders);
     } else {
-      // It is most likely a standalone placeholder
-      if (template.type === EITHER_TYPE) {
-        let errors = [];
-        for (let possibility of template.possibilities) {
-          try {
-            return fill_in_template(possibility, values);
-          } catch (err) {
-            errors.push(err);
-            continue;
-          }
-        }
-
-        let err = new Error(`Didn't match any subtemplate`);
-        err.errors = errors;
-        throw err;
-      } else {
-        // TODO Check if the input matches the standalone template/type
-        return ('ast' in values) ? values.ast : values;
-      }
+      // TODO Check if the input matches the standalone template/type
+      return ('ast' in values) ? values.ast : values;
     }
   }
 
   if (!t.Node.check(template)) {
-    console.log(`template:`, template);
+    // console.log(`template:`, template);
     throw new Error('Template is not a node');
   }
 
@@ -88,7 +93,7 @@ let fill_in_template = (template, values, placeholders) => {
       return flatten(
         node.map((list_item) => {
           let possible_repeat = get_placeholder(list_item, placeholders);
-          if (possible_repeat && possible_repeat.type === REPEAT_TYPE) {
+          if (possible_repeat && possible_repeat.type === TemplatePrimitives.REPEAT_TYPE) {
             let value_list = values[possible_repeat.name];
 
             if (value_list == null) {
@@ -113,10 +118,13 @@ let fill_in_template = (template, values, placeholders) => {
               throw new Error(`Placeholder '${possible_repeat.name}' got too many items ${mismatch}`);
             }
 
+            // console.log(`possible_repeat.subtemplate:`, possible_repeat.subtemplate)
             return value_list.map((value) => {
+              // console.log(`value:`, value)
               return fill_in_template(possible_repeat.subtemplate, value);
             });
           } else {
+            // console.log(`list_item:`, list_item)
             return [fill_in_template(list_item, values, placeholders)];
           }
         })

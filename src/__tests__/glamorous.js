@@ -1,6 +1,5 @@
 let { template: t, match_inside, unparsable } = require('../ast-template.js');
 
-console.log(`unparsable():`, unparsable`call(${['x']})`);
 
 it('should match a static glamorous call', () => {
   let source = `

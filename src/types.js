@@ -94,10 +94,9 @@ let remove_keys = (object) => {
 let TemplatePrimitives = {
   REPEAT_TYPE: Symbol('Repeat a part a certain number of times'),
   EITHER_TYPE: Symbol('Matches one of multiple subtemplates'),
-  STATEMENTS: Symbol('Collection of statements'),
-  STATEMENT: Symbol('One single statement'),
-  EXPRESSION: Symbol('One single expression'),
+  NODE: Symbol('Collection of statements'),
   TEMPLATE: Symbol('an template containing ast and placeholder info'),
+  UNPARSABLE: Symbol('Unparsable nested template'),
 }
 
 module.exports = { is_placeholder, get_placeholder, REPEAT_TYPE: TemplatePrimitives.REPEAT_TYPE, EITHER_TYPE: TemplatePrimitives.EITHER_TYPE, remove_keys, TemplatePrimitives }
