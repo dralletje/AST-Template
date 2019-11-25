@@ -160,7 +160,7 @@ it('should fill in anonymous many', () => {
 
 it('should fill in a function expression', () => {
   let definition_template = template.statements`
-    let x = ${template.function_expression('fn')};
+    let x = ${template.$function_expression('fn')};
   `;
 
   expect(

@@ -1,4 +1,4 @@
-let { template, match_inside } = require('../ast-template.js');
+let { template, match_inside, match_precise } = require('../ast-template.js');
 
 it('should match a react component', () => {
   let source = `
@@ -9,7 +9,7 @@ it('should match a react component', () => {
     <Route path={${template.Expression('hey')}} />
   `;
 
-  expect(t.match(source)).toMatchSnapshot();
+  expect(match_precise(t, source)).toMatchSnapshot();
 })
 
 it('should match a react component', () => {
@@ -21,7 +21,7 @@ it('should match a react component', () => {
     <Route ${template.JSXIdentifier('z')}={${template.Expression('hey')}} />
   `;
 
-  expect(t.match(source)).toMatchSnapshot();
+  expect(match_precise(t, source)).toMatchSnapshot();
 })
 
 it('should match a shorthand jsx attribute', () => {
@@ -33,7 +33,7 @@ it('should match a shorthand jsx attribute', () => {
     <Route exact />
   `;
 
-  expect(t.match(source)).toMatchSnapshot();
+  expect(match_precise(t, source)).toMatchSnapshot();
 })
 
 it.skip('should match a shorthand jsx attribute to expanded version', () => {
@@ -45,7 +45,7 @@ it.skip('should match a shorthand jsx attribute to expanded version', () => {
     <Route exact={true} />
   `;
 
-  console.log(`t.match(source):`, t.match(source))
+  console.log(`match_precise(t, source):`, match_precise(t, source))
 });
 
 it('should match multiple jsx attributes', () => {
@@ -57,10 +57,10 @@ it('should match multiple jsx attributes', () => {
     <Route ${template.many('y', template.jsxAttribute`${template.JSXIdentifier('l')}={${template.Expression('hey')}}`)} />
   `;
 
-  expect(t.match(source)).toMatchSnapshot();
+  expect(match_precise(t, source)).toMatchSnapshot();
 })
 
-it.only('should match multiple boolean attributes', () => {
+it('should match multiple boolean attributes', () => {
   let source = `
     <Route exact />
   `;
@@ -71,7 +71,19 @@ it.only('should match multiple boolean attributes', () => {
     />
   `;
 
-  expect(t.match(source)).toMatchSnapshot();
+  expect(match_precise(t, source)).toMatchSnapshot();
+})
+
+it.skip('should match a one_or_more', () => {
+  let source = `
+    <Route exact />
+  `;
+
+  let t = template.statements`
+    ${template.one_or_more('statements', template.Expression)}
+  `;
+
+  expect(match_precise(t, source)).toMatchSnapshot();
 })
 
 it('should find React Components inside a file', () => {

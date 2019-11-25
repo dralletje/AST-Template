@@ -14,7 +14,7 @@ let definition_template = template.statements`
     ])
   )}
 
-  let ${template.Identifier('fetch_fn')} = async (${template.arguments(
+  let ${template.Identifier('fetch_fn')} = async (${template.$arguments(
   'arguments'
 )}) => {
     ${template.many('fetch_functions', template.Statement)}
@@ -24,7 +24,7 @@ let definition_template = template.statements`
         'flow_functions',
         template.either(null, [
           template.expression`
-            iterate.map((${template.arguments('map_args')}) => {
+            iterate.map((${template.$arguments('map_args')}) => {
               ${template.many(
                 'map_statements',
                 template.either(null, [
@@ -45,7 +45,7 @@ let definition_template = template.statements`
             })
           `,
           template.expression`
-            iterate.filter(${template.function_expression('filter_fn')})
+            iterate.filter(${template.$function_expression('filter_fn')})
           `,
           template.expression`
             iterate.${template.Identifier('iterate_fn')}(${template.many(
