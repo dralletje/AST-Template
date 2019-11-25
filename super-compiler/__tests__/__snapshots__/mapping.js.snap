@@ -1,0 +1,562 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should do constant_literal number 1`] = `
+Array [
+  Array [
+    Object {
+      "argument_one": Symbol(Return reference @root.1),
+      "argument_two": 10,
+      "operator": "===",
+      "type": "Assert",
+    },
+  ],
+]
+`;
+
+exports[`should do constant_literal string 1`] = `
+Object {
+  "assertions": Array [
+    Object {
+      "argument_one": Symbol(Return reference @root.1),
+      "argument_two": "Hey",
+      "operator": "===",
+      "type": "Assert",
+    },
+  ],
+  "return": Symbol(Return reference @root.1),
+}
+`;
+
+exports[`should do function_call 1`] = `
+Object {
+  "assertions": Array [
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.1.1),
+        "argument_two": Object {
+          "argument_one": Symbol(Current scope reference @root.1.1),
+          "argument_two": "func",
+          "operator": ".",
+          "type": "Express",
+        },
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Array [],
+    Object {
+      "argument_one": Symbol(Return reference @root.1.1),
+      "argument_two": Array [],
+      "operator": "()",
+      "type": "Assert",
+    },
+  ],
+  "return": Symbol(Return reference @root.1),
+}
+`;
+
+exports[`should do function_call with arguments 1`] = `
+Object {
+  "assertions": Array [
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.1.1),
+        "argument_two": Object {
+          "argument_one": Symbol(Current scope reference @root.1.1),
+          "argument_two": "func",
+          "operator": ".",
+          "type": "Express",
+        },
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Array [
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.1.2),
+          "argument_two": 10,
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.1.3),
+          "argument_two": "hey",
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [
+        Array [
+          Object {
+            "argument_one": Symbol(Return reference @root.1.4.1),
+            "argument_two": Object {
+              "argument_one": Symbol(Current scope reference @root.1.4.1),
+              "argument_two": "func",
+              "operator": ".",
+              "type": "Express",
+            },
+            "operator": "===",
+            "type": "Assert",
+          },
+        ],
+        Array [],
+        Object {
+          "argument_one": Symbol(Return reference @root.1.4.1),
+          "argument_two": Array [],
+          "operator": "()",
+          "type": "Assert",
+        },
+      ],
+    ],
+    Object {
+      "argument_one": Symbol(Return reference @root.1.1),
+      "argument_two": Array [
+        undefined,
+        undefined,
+        undefined,
+      ],
+      "operator": "()",
+      "type": "Assert",
+    },
+  ],
+  "return": Symbol(Return reference @root.1),
+}
+`;
+
+exports[`should do function_call with arguments 2`] = `
+Object {
+  "assertions": Array [
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.1.1),
+        "argument_two": Object {
+          "argument_one": Symbol(Current scope reference @root.1.1),
+          "argument_two": "func",
+          "operator": ".",
+          "type": "Express",
+        },
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Array [
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.1.2),
+          "argument_two": 10,
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.1.3),
+          "argument_two": "hey",
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [
+        Array [
+          Object {
+            "argument_one": Symbol(Return reference @root.1.4.1),
+            "argument_two": Object {
+              "argument_one": Symbol(Current scope reference @root.1.4.1),
+              "argument_two": "func",
+              "operator": ".",
+              "type": "Express",
+            },
+            "operator": "===",
+            "type": "Assert",
+          },
+        ],
+        Array [],
+        Object {
+          "argument_one": Symbol(Return reference @root.1.4.1),
+          "argument_two": Array [],
+          "operator": "()",
+          "type": "Assert",
+        },
+      ],
+    ],
+    Object {
+      "argument_one": Symbol(Return reference @root.1.1),
+      "argument_two": Array [
+        undefined,
+        undefined,
+        undefined,
+      ],
+      "operator": "()",
+      "type": "Assert",
+    },
+  ],
+  "return": Symbol(Return reference @root.1),
+}
+`;
+
+exports[`should do gte_operator 1`] = `
+Object {
+  "assertions": Array [
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.1.1),
+        "argument_two": 10,
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.1.2),
+        "argument_two": 4,
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Object {
+      "condition": Object {
+        "argument_one": Symbol(Return reference @root.1.1),
+        "argument_two": Symbol(Return reference @root.1.2),
+        "operator": ">",
+        "type": "Assert",
+      },
+      "inverse": false,
+      "type": "Condition",
+    },
+  ],
+  "return": Symbol(Return reference @root.1),
+}
+`;
+
+exports[`should do if_else with statements 1`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.8.1.1),
+          "argument_two": Object {
+            "argument_one": Symbol(Current scope reference @root.8.1.1),
+            "argument_two": "x",
+            "operator": ".",
+            "type": "Express",
+          },
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.8.1.2),
+          "argument_two": 3,
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Object {
+        "condition": Object {
+          "argument_one": Symbol(Return reference @root.8.1.1),
+          "argument_two": Symbol(Return reference @root.8.1.2),
+          "operator": ">",
+          "type": "Assert",
+        },
+        "inverse": false,
+        "type": "Condition",
+      },
+    ],
+    Object {
+      "assertions": undefined,
+      "condition": Object {
+        "condition": undefined,
+        "inverse": false,
+        "type": "Condition",
+      },
+      "type": "Fork",
+    },
+    Object {
+      "assertions": undefined,
+      "condition": Object {
+        "condition": undefined,
+        "inverse": true,
+        "type": "Condition",
+      },
+      "type": "Fork",
+    },
+  ],
+]
+`;
+
+exports[`should do if_statement with statements 1`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.7.1.1),
+          "argument_two": 3,
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.7.1.2),
+          "argument_two": Object {
+            "argument_one": Symbol(Current scope reference @root.7.1.2),
+            "argument_two": "x",
+            "operator": ".",
+            "type": "Express",
+          },
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Object {
+        "condition": Object {
+          "argument_one": Symbol(Return reference @root.7.1.1),
+          "argument_two": Symbol(Return reference @root.7.1.2),
+          "operator": ">",
+          "type": "Assert",
+        },
+        "inverse": false,
+        "type": "Condition",
+      },
+    ],
+    Object {
+      "assertions": undefined,
+      "condition": Object {
+        "condition": undefined,
+        "inverse": false,
+        "type": "Condition",
+      },
+      "type": "Fork",
+    },
+  ],
+]
+`;
+
+exports[`should do let_assigment 1`] = `
+Array [
+  Array [
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.6.1),
+        "argument_two": "hey",
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Object {
+      "argument_one": Object {
+        "argument_one": Symbol(Current scope reference @root.6),
+        "argument_two": "x",
+        "operator": ".",
+        "type": "Express",
+      },
+      "argument_two": Symbol(Return reference @root.6.1),
+      "operator": "===",
+      "type": "Assert",
+    },
+  ],
+]
+`;
+
+exports[`should do object_property 1`] = `
+Array [
+  Array [
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.5.1),
+        "argument_two": Object {
+          "argument_one": Symbol(Current scope reference @root.5.1),
+          "argument_two": "object_variable",
+          "operator": ".",
+          "type": "Express",
+        },
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.5.2),
+        "argument_two": "property_name",
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Object {
+      "argument_one": Symbol(Return reference @root.5),
+      "argument_two": Object {
+        "argument_one": Symbol(Return reference @root.5.1),
+        "argument_two": Symbol(Return reference @root.5.2),
+        "operator": ".",
+        "type": "Express",
+      },
+      "operator": "===",
+      "type": "Assert",
+    },
+  ],
+]
+`;
+
+exports[`should do return_statement 1`] = `
+Array [
+  Array [
+    Array [
+      Object {
+        "argument_one": Symbol(Return reference @root.9.1),
+        "argument_two": Object {
+          "argument_one": Symbol(Current scope reference @root.9.1),
+          "argument_two": "x",
+          "operator": ".",
+          "type": "Express",
+        },
+        "operator": "===",
+        "type": "Assert",
+      },
+    ],
+    Object {
+      "to": Symbol(Jump return @root),
+      "type": "Jump",
+      "with": Symbol(Return reference @root.9.1),
+    },
+  ],
+]
+`;
+
+exports[`should do variable 1`] = `
+Object {
+  "assertions": Array [
+    Object {
+      "argument_one": Symbol(Return reference @root.1),
+      "argument_two": Object {
+        "argument_one": Symbol(Current scope reference @root.1),
+        "argument_two": "func",
+        "operator": ".",
+        "type": "Express",
+      },
+      "operator": "===",
+      "type": "Assert",
+    },
+  ],
+  "return": Symbol(Return reference @root.1),
+}
+`;
+
+exports[`should parse program 1`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        Array [
+          Object {
+            "argument_one": Symbol(Return reference @root.6.1.1.1),
+            "argument_two": Object {
+              "argument_one": Symbol(Current scope reference @root.6.1.1.1),
+              "argument_two": "Math",
+              "operator": ".",
+              "type": "Express",
+            },
+            "operator": "===",
+            "type": "Assert",
+          },
+        ],
+        Array [
+          Object {
+            "argument_one": Symbol(Return reference @root.6.1.1.2),
+            "argument_two": "random",
+            "operator": "===",
+            "type": "Assert",
+          },
+        ],
+        Object {
+          "argument_one": Symbol(Return reference @root.6.1.1),
+          "argument_two": Object {
+            "argument_one": Symbol(Return reference @root.6.1.1.1),
+            "argument_two": Symbol(Return reference @root.6.1.1.2),
+            "operator": ".",
+            "type": "Express",
+          },
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [],
+      Object {
+        "argument_one": Symbol(Return reference @root.6.1.1),
+        "argument_two": Array [],
+        "operator": "()",
+        "type": "Assert",
+      },
+    ],
+    Object {
+      "argument_one": Object {
+        "argument_one": Symbol(Current scope reference @root.6),
+        "argument_two": "x",
+        "operator": ".",
+        "type": "Express",
+      },
+      "argument_two": Symbol(Return reference @root.6.1),
+      "operator": "===",
+      "type": "Assert",
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.14.1.1),
+          "argument_two": Object {
+            "argument_one": Symbol(Current scope reference @root.14.1.1),
+            "argument_two": "x",
+            "operator": ".",
+            "type": "Express",
+          },
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Array [
+        Object {
+          "argument_one": Symbol(Return reference @root.14.1.2),
+          "argument_two": 2,
+          "operator": "===",
+          "type": "Assert",
+        },
+      ],
+      Object {
+        "condition": Object {
+          "argument_one": Symbol(Return reference @root.14.1.1),
+          "argument_two": Symbol(Return reference @root.14.1.2),
+          "operator": ">",
+          "type": "Assert",
+        },
+        "inverse": false,
+        "type": "Condition",
+      },
+    ],
+    Object {
+      "assertions": undefined,
+      "condition": Object {
+        "condition": undefined,
+        "inverse": false,
+        "type": "Condition",
+      },
+      "type": "Fork",
+    },
+    Object {
+      "assertions": undefined,
+      "condition": Object {
+        "condition": undefined,
+        "inverse": true,
+        "type": "Condition",
+      },
+      "type": "Fork",
+    },
+  ],
+]
+`;
