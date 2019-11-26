@@ -248,3 +248,29 @@ it('should fill in object entries', () => {
     ).code
   ).toMatchSnapshot();
 });
+
+it('should fill in nested repeats', () => {
+  let definition_template = template.statements`
+    let x = {
+      ${template.many('entries', template.entry`
+        ${template.Identifier('key')}: [
+          ${template.many('items', template.Expression)},
+        ],
+      `)}
+    }
+  `;
+
+  expect(
+    generate(
+      fill_in_template(definition_template, {
+        entries: [{
+          key: template.expression`key`,
+          items: [template.expression`10`],
+        }, {
+          key: template.expression`key2`,
+          items: [template.expression`12`],
+        }]
+      })
+    ).code
+  ).toMatchSnapshot();
+});
