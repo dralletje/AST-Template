@@ -1,4 +1,4 @@
-let { template, MismatchError } = require("../ast-template.js");
+let { template: t, MismatchError, match_precise } = require("../");
 // let { minivaluate } = require("../../minivaluate.js");
 
 class CompositeError extends Error {
@@ -67,12 +67,12 @@ let Fork = (condition, assertions) => {
 
 let let_assignment = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.statements`
-    let ${template.Identifier('identifier')} = ${template.Expression('expression')};
+  let template = t.statements`
+    let ${t.Identifier('identifier')} = ${t.Expression('expression')};
   `;
   let {
     areas: { identifier, expression },
-  } = match(source);
+  } = match_precise(template, source);
 
   let { return: result, assertions } = context.evaluate_expression(expression);
 
@@ -83,14 +83,14 @@ let let_assignment = ({ source, context }) => {
 };
 
 let if_statement = ({ source, context }) => {
-  let { match } = template.statements`
-    if (${template.Expression("condition")}) {
-      ${template.many("statements", template.Statement)}
+  let template = t.statements`
+    if (${t.Expression("condition")}) {
+      ${t.many("statements", t.Statement)}
     }
   `;
   let {
     areas: { condition, statements },
-  } = match(source);
+  } = match_precise(template, source);
 
   let condition_result = context.evaluate_expression(condition);
 
@@ -104,17 +104,17 @@ let if_statement = ({ source, context }) => {
 
 let if_else = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.statements`
-    if (${template.Expression("condition")}) {
-      ${template.many("if_statements", template.Statement)}
+  let template = t.statements`
+    if (${t.Expression("condition")}) {
+      ${t.many("if_statements", t.Statement)}
     } else {
-      ${template.many("else_statements", template.Statement)}
+      ${t.many("else_statements", t.Statement)}
     }
   `;
 
   let {
     areas: { condition, if_statements, else_statements },
-  } = match(source);
+  } = match_precise(template, source);
 
   let condition_result = context.evaluate_expression(condition);
 
@@ -133,11 +133,11 @@ let if_else = ({ source, context }) => {
 
 let return_statement = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.statements`return ${template.Expression('result')}`;
+  let template = t.statements`return ${t.Expression('result')}`;
 
   let {
     areas: { result },
-  } = match(source);
+  } = match_precise(template, source);
 
   let result_result = context.evaluate_expression(result);
 
@@ -152,18 +152,18 @@ let return_statement = ({ source, context }) => {
 
 let constant_literal = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.expression`${template.Literal('literal')}`;
+  let template = t.expression`${t.$literal('literal')}`;
   let {
     areas: { literal },
-  } = match(source);
+  } = match_precise(template, t.as_expression(source));
   return [Assert(context.return, `===`, literal)];
 };
 let gte_operator = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.expression`${template.Expression('left')} > ${template.Expression('right')}`;
+  let template = t.expression`${t.Expression('left')} > ${t.Expression('right')}`;
   let {
     areas: { left, right },
-  } = match(source);
+  } = match_precise(template, source);
 
   let _left = context.evaluate_expression(left);
   let _right = context.evaluate_expression(right);
@@ -176,20 +176,20 @@ let gte_operator = ({ source, context }) => {
 
 let variable = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.expression`${template.Identifier('name')}`;
+  let template = t.expression`${t.Identifier('name')}`;
   let {
     areas: { name },
-  } = match(source);
+  } = match_precise(template, t.as_expression(source));
 
   return [Assert(context.return, `===`, Express(context.scope, ".", name))];
 };
 
 let function_call = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.expression`${template.Expression('callee')}(${template.many('args', template.Expression)})`
+  let template = t.expression`${t.Expression('callee')}(${t.many('args', t.Expression)})`;
   let {
     areas: { callee, args },
-  } = match(source);
+  } = match_precise(template, t.as_expression(source));
 
   let callee_result = context.evaluate_expression(callee);
   let arguments_results = args.map(arg => context.evaluate_expression(arg));
@@ -203,10 +203,10 @@ let function_call = ({ source, context }) => {
 
 let object_property = ({ source, context }) => {
   // prettier-ignore
-  let { match } = template.expression`${template.Expression('object')}.${template.Identifier('property')}`
+  let template = t.expression`${t.Expression('object')}.${t.Identifier('property')}`
   let {
     areas: { object, property },
-  } = match(source);
+  } = match_precise(template, t.as_expression(source));
 
   let object_result = context.evaluate_expression(object);
   let property_result = context.evaluate_expression(`"${property}"`);
@@ -263,7 +263,7 @@ let create_context = ({
       for (let [name, match] of Object.entries(Expressions)) {
         try {
           let x = match({
-            source: expression,
+            source: t.expression([expression]).ast,
             context: context,
           });
 
@@ -279,14 +279,21 @@ let create_context = ({
         }
       }
 
-      console.log(`errors.cases:`, errors.cases);
+      console.log('errors.cases:');
+      for (let error_case of errors.cases) {
+        console.log(`
+          match: ${error_case.match};
+          cause: ${error_case.cause};
+        `);
+      }
+
       throw errors;
     },
     evaluate_statements: statements => {
       if (typeof statements === "string") {
         // prettier-ignore
-        let { match: match_statements } = template.statements`${template.many('statement', template.Statement)}`;
-        statements = match_statements(statements).areas.statement;
+        let template = t.statements`${t.many('statement', t.Statement)}`;
+        statements = match_precise(template, statements).areas.statement;
       }
 
       let matchables = [
@@ -332,7 +339,13 @@ let create_context = ({
         }
 
         console.log(`errors.statement:`, errors.statement);
-        console.log(`errors.cases:`, errors.cases);
+        console.log('errors.cases:');
+        for (let error_case of errors.cases) {
+          console.log(`
+            match: ${error_case.match};
+            cause: ${error_case.cause};
+          `);
+        }
         throw errors;
       }
 

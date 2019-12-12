@@ -26,6 +26,7 @@ let take = (place, conditions) => {
   console.log(`place:`, place);
   let relevant_assertions = conditions.filter(condition => is_relevant(condition, place));
   console.log(`relevant_assertions:`, relevant_assertions);
+  return relevant_assertions;
 }
 
 let evaluate = (context, conditions) => {

@@ -2,7 +2,7 @@
   "name": "ast-template",
   "version": "1.0.0",
   "description": "",
-  "main": "ast-template.js",
+  "main": "./src/ast-template.js",
   "scripts": {
     "test": "jest",
     "watch": "jest --watch --verbose false"

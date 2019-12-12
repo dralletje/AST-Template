@@ -843,6 +843,40 @@ let astemplate = {
       map_fn: (x) => x.value,
     };
   },
+  Number: (name) => {
+    return {
+      type: TemplatePrimitives.NODE,
+      node_type: t.NumericLiteral,
+      name,
+      map_fn: (x) => x.value,
+    };
+  },
+  $literal: (name) => {
+    return astemplate.either(name, [
+      astemplate.String,
+      astemplate.Number,
+    ]);
+  },
+
+  as_expression: (source) => {
+    if (typeof source === 'string') {
+      try {
+        return astemplate.expression([source]).ast;
+      } catch (err) {
+        return astemplate.as_expression(astemplate.statement([source]).ast);
+      }
+    } else {
+      if (source.type === 'ExpressionStatement') {
+        return source.expression;
+      }
+      else if (source.type === 'File') {
+        console.log(`source:`, source)
+      }
+      else {
+        return source;
+      }
+    }
+  }
 };
 
 module.exports = {
@@ -854,4 +888,5 @@ module.exports = {
   },
   fill_in_template,
   unparsable,
+  MismatchError,
 };
