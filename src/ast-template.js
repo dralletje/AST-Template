@@ -16,8 +16,7 @@ let { fill_in_template } = require('./fill_in_template.js');
 let generate = (ast) => {
   try {
     if (Array.isArray(ast)) {
-      let x = ast.map(generate);
-      return x;
+      return ast.map(x => generate(x));
     }
     if (ast.ast) {
       return generate(ast.ast);

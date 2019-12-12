@@ -94,7 +94,7 @@ let remove_keys = (object) => {
 let TemplatePrimitives = {
   REPEAT_TYPE: Symbol('Repeat a part a certain number of times'),
   EITHER_TYPE: Symbol('Matches one of multiple subtemplates'),
-  NODE: Symbol('Collection of statements'),
+  NODE: Symbol('Match a node of specific type'),
   TEMPLATE: Symbol('an template containing ast and placeholder info'),
   UNPARSABLE: Symbol('Unparsable nested template'),
 }

@@ -40,6 +40,13 @@ exports[`should fill in anonymous many 1`] = `
 10"
 `;
 
+exports[`should fill in nested repeats 1`] = `
+"let x = {
+  key: [10],
+  key2: [12]
+};"
+`;
+
 exports[`should fill in object entries 1`] = `
 "let x = {
   key: 10,
