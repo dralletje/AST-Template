@@ -78,7 +78,7 @@ let let_assignment = ({ source, context }) => {
 
   return [
     assertions,
-    Assert(Express(context.scope, ".", identifier), `===`, result),
+    Assert(Express(context.scope, ".", identifier), `becomes`, result),
   ];
 };
 
@@ -156,7 +156,8 @@ let constant_literal = ({ source, context }) => {
   let {
     areas: { literal },
   } = match_precise(template, t.as_expression(source));
-  return [Assert(context.return, `===`, literal)];
+  let memory = context.allocate();
+  return [Assert(memory, `creates`, literal), Assert(context.return, `becomes`, memory)];
 };
 let gte_operator = ({ source, context }) => {
   // prettier-ignore
@@ -181,7 +182,7 @@ let variable = ({ source, context }) => {
     areas: { name },
   } = match_precise(template, t.as_expression(source));
 
-  return [Assert(context.return, `===`, Express(context.scope, ".", name))];
+  return [Assert(context.return, `becomes`, Express(context.scope, ".", name))];
 };
 
 let function_call = ({ source, context }) => {
@@ -216,7 +217,7 @@ let object_property = ({ source, context }) => {
     property_result.assertions,
     Assert(
       context.return,
-      `===`,
+      `becomes`,
       Express(object_result.return, `.`, property_result.return)
     ),
   ];
@@ -245,10 +246,14 @@ let create_context = ({
   let context_counter = 0;
 
   return {
-    scope: Symbol(`Current scope reference @${path}`),
-    return: Symbol(`Return reference @${path}`),
+    scope: Symbol(`Current scope reference @ ${path}`),
+    return: Symbol(`Return reference @ ${path}`),
     jump_return: jump_return,
     jump_throw: jump_throw,
+    allocate: () => {
+      context_counter = context_counter + 1;
+      return Symbol(`Allocation @ ${path}.${context_counter}`)
+    },
 
     evaluate_expression: expression => {
       context_counter = context_counter + 1;

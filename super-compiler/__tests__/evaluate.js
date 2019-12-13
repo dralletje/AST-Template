@@ -8,3 +8,12 @@ it("should do something with the return", () => {
   let eval = evaluate(context, conditions);
   console.log(`eval:`, eval)
 });
+
+
+it("should do something with a literal return", () => {
+  let context = create_context();
+  let conditions = context.evaluate_statements(`return "Hello world"`);
+
+  let eval = evaluate(context, conditions);
+  console.log(`eval:`, eval)
+});

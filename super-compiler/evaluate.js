@@ -29,7 +29,17 @@ let take = (place, conditions) => {
   return relevant_assertions;
 }
 
+let make_two_way_graph = (conditions) => {
+  let previous = Symbol('Start');
+  let nodes = [];
+  for (let condition of conditions) {
+    console.log(`condition:`, condition)
+  }
+
+}
+
 let evaluate = (context, conditions) => {
+  console.log(`conditions:`, conditions)
   let flat_conditions = flattenDeep(conditions);
 
   let assertions = [];
